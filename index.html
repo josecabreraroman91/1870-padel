@@ -654,20 +654,23 @@ function vAgenda() {
           <button class="iconbtn" data-act="dia" data-d="1" aria-label="Día siguiente"><svg><use href="#i-next"/></svg></button>
         </div>
       </div>
-      ${S.canchas.length ? `<div class="board-wrap"><div class="board" style="grid-template-columns:var(--tc) repeat(${cols},minmax(var(--cw),1fr));grid-template-rows:var(--bh) ${slots.map(s => esHoy && s.ini + dur <= now ? 'var(--rowp)' : 'var(--row)').join(' ')}">${cells}${nowline}</div></div>`
-        : `<div class="plate empty"><b>Todavía no hay canchas</b>${esAdmin() ? 'Cargalas en Ajustes → Canchas.' : 'Pedile al administrador que las cargue.'}</div>`}
+      ${S.canchas.length ? `<div class="board-wrap"><div class="board" style="grid-template-columns:var(--tc) repeat(${cols},minmax(var(--cw),1fr));grid-template-rows:var(--bh) ${slots.map(s => esHoy && s.ini + dur <= now ? 'var(--rowp)' : 'var(--row)').join(' ')}">${cells}${nowline}</div></div><div class="muted" style="font-size:14px;margin-top:10px">Tocá cualquier horario para reservarlo, empezar el partido, cargar consumos, cobrar o bloquearlo.</div>`
+        : `<div class="plate empty"><b>Todavía no hay canchas</b>${esAdmin() ? 'Agregalas con el botón “Agregar cancha” o desde Ajustes → Canchas.' : 'Pedile al administrador que las cargue.'}</div>`}
     </section>
     <aside class="rail">
+      ${!S.canchas.length ? `<div class="plate pad stack"><h2 class="lbl">Primer paso</h2>
+        <div style="font-size:16px">Cargá las canchas del club para que aparezca el tablero con los horarios.</div>
+        ${esAdmin() ? `<button class="btn btn-ink" data-act="nuevaCancha"><svg><use href="#i-plus"/></svg>Agregar cancha</button>` : `<div class="muted">Pedile al administrador que las cargue en Ajustes.</div>`}</div>` : `
       <div class="plate proximo">
-        <h2 class="lbl">Próximo libre${esHoy ? '' : ' · ' + DIAS_C[keyToDate(FECHA).getDay()]}</h2>
+        <h2 class="lbl">Próximo turno libre${esHoy ? '' : ' · ' + DIAS_C[keyToDate(FECHA).getDay()]}</h2>
         ${prox ? `<div class="big">${proxAhora ? `<em>${prox.ini}</em>` : prox.ini}</div><div class="pc">${esc(prox.cancha.nombre)}${proxAhora ? ' · ya' : ''}</div>`
-          : `<div class="big" style="font-size:30px">Todo reservado</div><div class="muted">No quedan turnos este día.</div>`}
+          : `<div class="big" style="font-size:30px">Todo reservado</div><div class="muted">No quedan turnos libres este día.</div>`}
         <div class="row" style="margin-top:14px">
-          <button class="btn btn-ink btn-sm" data-act="copiarDisp"><svg><use href="#i-copy"/></svg>Copiar libres</button>
+          <button class="btn btn-ink btn-sm" data-act="copiarDisp" title="Copia los horarios libres del día para pegarlos en WhatsApp"><svg><use href="#i-copy"/></svg>Copiar para WhatsApp</button>
           ${prox ? `<button class="btn btn-line btn-sm" data-act="abrirSlot" data-c="${prox.cancha.id}" data-h="${prox.ini}">Reservar</button>` : ''}
         </div>
         <button class="caja-line" data-act="ir" data-v="caja">${caja ? `<span class="sello">Caja abierta</span><b>${gs(cajaTot)}</b>` : `<span class="sello off">Caja cerrada</span><span>Abrir para cobrar</span>`}<svg><use href="#i-next"/></svg></button>
-      </div>
+      </div>`}
       <div class="plate pad caja-mini">
         <div class="spread"><h2 class="lbl">Caja</h2>${caja ? '<span class="sello">Abierta</span>' : '<span class="sello off">Cerrada</span>'}</div>
         ${caja ? `<div class="total" style="margin-top:8px">${gs(cajaTot)}</div><div class="muted" style="font-size:14px">cobrado en el turno de ${esc(caja.op)}</div>`
@@ -771,8 +774,8 @@ function reservar() {
     'Reserva creada', `${c.nombre} ${h.fecha} ${h.h} · ${cliente}`);
   toast('Turno reservado');
 }
-function bloquearSlot() {
-  const motivo = prompt('Motivo del bloqueo (ej.: mantenimiento, clase, torneo):', 'Mantenimiento'); if (motivo === null) return;
+async function bloquearSlot() {
+  const f = await pedir('Bloquear horario', [{ id: 'm', label: 'Motivo', valor: 'Mantenimiento', ph: 'Mantenimiento, clase, torneo…' }], { boton: 'Bloquear' }); if (!f) return; const motivo = f.m;
   const h = HOJA, id = uid();
   DB.commit(S => { S.reservas[id] = { id, fecha: h.fecha, canchaId: h.c, ini: h.h, cliente: motivo || 'Bloqueado', estado: 'bloqueo', precio: 0, consumos: [], pagos: [] }; }, 'Horario bloqueado', `${h.fecha} ${h.h} · ${motivo}`);
 }
@@ -822,16 +825,16 @@ const ACT = {
     }, 'Cobro de cancha', `${resTxt(d.id)} · ${gs(monto)} · ${METODO}`);
     toast('Cobrado ' + gs(monto));
   },
-  editarRes: d => {
+  editarRes: async d => {
     const r = DB.S.reservas[d.id];
-    const cliente = prompt('Nombre de quien reserva:', r.cliente); if (cliente === null) return;
-    const jug = prompt('Cantidad de jugadores:', r.jugadores); if (jug === null) return;
+    const f = await pedir('Editar reserva', [{ id: 'c', label: 'Nombre de quien reserva', valor: r.cliente }, { id: 'j', label: 'Jugadores', tipo: 'num', valor: r.jugadores }]); if (!f) return;
+    const cliente = f.c, jug = f.j;
     DB.commit(S => { const x = S.reservas[d.id]; x.cliente = cliente.trim() || x.cliente; x.jugadores = Math.max(1, +jug || x.jugadores); }, 'Reserva editada', resTxt(d.id));
   },
-  cancelarRes: d => {
+  cancelarRes: async d => {
     const r = DB.S.reservas[d.id];
     if (pagado(r) > 0) { toast('Tiene pagos registrados: pedile al administrador que la corrija'); if (!esAdmin()) return; }
-    const motivo = prompt('¿Por qué se cancela? (queda en el historial)', 'Avisó que no viene'); if (motivo === null) return;
+    const f = await pedir('Cancelar reserva', [{ id: 'm', label: '¿Por qué se cancela? (queda en el historial)', valor: 'Avisó que no viene' }], { boton: 'Cancelar reserva', peligro: true }); if (!f) return; const motivo = f.m;
     DB.commit(S => { const x = S.reservas[d.id]; x.estado = 'cancelada'; x.motivo = motivo; for (const k of x.consumos || []) ajustarStock(S, k.prodId, k.cant); }, 'Reserva cancelada', `${resTxt(d.id)} · ${motivo}`);
     cerrarHoja(); toast('Reserva cancelada');
   }
@@ -922,11 +925,12 @@ Object.assign(ACT, {
     }, 'Consumo a cancha', `${items.map(k => k.cant + '× ' + k.nombre).join(', ')} → ${resTxt(r.id)}`);
     CARRO = []; render(); toast('Cargado a ' + nombreCancha(r.canchaId));
   },
-  entrada: d => {
+  entrada: async d => {
     const p = DB.S.productos.find(x => x.id === d.p);
-    const cant = num(prompt(`¿Cuántas unidades de “${p.nombre}” entraron?`, '')); if (!cant) return;
+    const f = await pedir('Entrada · ' + p.nombre, [{ id: 'n', label: '¿Cuántas unidades entraron?', tipo: 'num', valor: '' }, ...(esAdmin() && p.tipo !== 'alquiler' ? [{ id: 'c', label: 'Costo por unidad de esta compra', tipo: 'gs', valor: p.costo }] : [])], { boton: 'Sumar al stock' }); if (!f) return;
+    const cant = Math.max(0, Math.round(f.n || 0)); if (!cant) { toast('Poné cuántas unidades entraron'); return; }
     let costo = p.costo;
-    if (esAdmin() && p.tipo !== 'alquiler') { const c = prompt('Costo por unidad (Gs.) de esta compra:', miles(p.costo)); if (c === null) return; costo = num(c) || p.costo; }
+    if (esAdmin() && p.tipo !== 'alquiler') { costo = f.c || p.costo; }
     DB.commit(S => { const x = S.productos.find(y => y.id === p.id); x.stock += cant; x.costo = costo; (S.entradas = S.entradas || []).unshift({ ts: Date.now(), prodId: p.id, nombre: p.nombre, cant, costo, op: OP.nombre }); },
       'Entrada de mercadería', `${cant}× ${p.nombre}${esAdmin() ? ' a ' + gs(costo) : ''}`);
     toast(`Stock de ${p.nombre}: +${cant}`);
@@ -958,7 +962,7 @@ Object.assign(ACT, {
     DB.commit(S => { if (d.id) Object.assign(S.productos.find(x => x.id === d.id), datos); else S.productos.push({ id: uid(), ...datos }); }, d.id ? 'Producto editado' : 'Producto nuevo', `${nombre} · ${gs(datos.precio)}`);
     cerrarHoja(); toast('Guardado');
   },
-  borrarProd: d => { const p = DB.S.productos.find(x => x.id === d.id); if (!confirm(`¿Quitar “${p.nombre}” de la cantina?`)) return; DB.commit(S => { S.productos = S.productos.filter(x => x.id !== d.id); }, 'Producto quitado', p.nombre); cerrarHoja(); }
+  borrarProd: async d => { const p = DB.S.productos.find(x => x.id === d.id); if (!(await confirmar(`¿Quitar “${p.nombre}” de la cantina?`, 'Quitar'))) return; DB.commit(S => { S.productos = S.productos.filter(x => x.id !== d.id); }, 'Producto quitado', p.nombre); cerrarHoja(); }
 });
 
 /* ---------- CAJA ---------- */
@@ -1000,10 +1004,10 @@ function vCaja() {
 function difCaja(esp) { const v = num($('#cCont').value), d = v - esp; $('#cDif').innerHTML = `<span>Diferencia</span><b style="color:${d < 0 ? 'var(--danger)' : 'var(--ink)'}">${$('#cCont').value ? (d > 0 ? '+' : '') + gs(d) : '—'}</b>`; }
 Object.assign(ACT, {
   abrirCaja: () => { const ini = num($('#cIni').value); DB.commit(S => { S.caja.actual = { id: uid(), apertura: Date.now(), op: OP.nombre, inicial: ini, movs: [] }; }, 'Caja abierta', gs(ini)); toast('Caja abierta'); },
-  cerrarCaja: () => {
+  cerrarCaja: async () => {
     const c = DB.S.caja.actual; if (!$('#cCont').value) { toast('Escribí el efectivo contado'); $('#cCont').focus(); return; }
     const contado = num($('#cCont').value), ef = c.movs.filter(m => m.metodo === 'efectivo').reduce((a, m) => a + m.monto, 0), esperado = c.inicial + ef;
-    if (!confirm(`¿Cerrar la caja?\nEsperado ${gs(esperado)} · Contado ${gs(contado)} · Diferencia ${gs(contado - esperado)}`)) return;
+    if (!(await confirmar(`Esperado ${gs(esperado)} · Contado ${gs(contado)} · Diferencia ${gs(contado - esperado)}`, 'Cerrar caja', false))) return;
     DB.commit(S => { S.caja.cerradas.unshift({ ...c, cierre: Date.now(), opCierre: OP.nombre, contado, esperado, cobrado: c.movs.reduce((a, m) => a + m.monto, 0) }); S.caja.actual = null; },
       'Caja cerrada', `Esperado ${gs(esperado)} · contado ${gs(contado)} · dif. ${gs(contado - esperado)}`);
     toast('Caja cerrada');
@@ -1101,24 +1105,22 @@ Object.assign(ACT, {
     if (!ab || !ci) { toast('Completá los horarios'); return; }
     DB.commit(S => { Object.assign(S.club, { nombre: n, apertura: ab, cierre: ci, duracion: du }); }, 'Ajustes del club', `${n} · ${ab}–${ci} · ${du} min`); toast('Guardado');
   },
-  nuevaCancha: () => { const n = prompt('Nombre de la cancha:', 'Cancha ' + (DB.S.canchas.length + 1)); if (!n) return; const p = num(prompt('Precio por turno (Gs.):', '150.000')); DB.commit(S => { S.canchas.push({ id: uid(), nombre: n.trim(), precio: p, techada: false, bloqueo: '' }); }, 'Cancha agregada', n); },
-  editCancha: d => {
+  nuevaCancha: async () => { const f = await formCancha(null); if (!f || !f.n) return; const n = f.n, p = f.p; DB.commit(S => { S.canchas.push({ id: uid(), nombre: n, precio: p, techada: f.t, bloqueo: '' }); }, 'Cancha agregada', n); },
+  editCancha: async d => {
     const c = DB.S.canchas.find(x => x.id === d.id);
-    const n = prompt('Nombre:', c.nombre); if (n === null) return;
-    const p = prompt('Precio por turno (Gs.):', miles(c.precio)); if (p === null) return;
-    const t = confirm('¿Es techada? (Aceptar = sí)');
+    const f = await formCancha(c); if (!f) return; const n = f.n, p = String(f.p), t = f.t;
     DB.commit(S => { Object.assign(S.canchas.find(x => x.id === d.id), { nombre: n.trim() || c.nombre, precio: num(p) || c.precio, techada: t }); }, 'Cancha editada', `${n} · ${gs(num(p))}`);
   },
-  bloqCancha: d => {
+  bloqCancha: async d => {
     const c = DB.S.canchas.find(x => x.id === d.id);
     if (c.bloqueo) { DB.commit(S => { S.canchas.find(x => x.id === d.id).bloqueo = ''; }, 'Cancha habilitada', c.nombre); return; }
-    const m = prompt('Motivo (ej.: lluvia, mantenimiento):', 'Mantenimiento'); if (!m) return;
+    const f = await pedir('Bloquear ' + c.nombre, [{ id: 'm', label: 'Motivo', valor: 'Mantenimiento', ph: 'Lluvia, mantenimiento…' }], { boton: 'Bloquear' }); if (!f || !f.m) return; const m = f.m;
     DB.commit(S => { S.canchas.find(x => x.id === d.id).bloqueo = m; }, 'Cancha bloqueada', `${c.nombre} · ${m}`);
   },
   nuevoOp: () => editarOp(null), editOp: d => editarOp(d.id),
   exportar: () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(DB.S, null, 1)], { type: 'application/json' })); a.download = `padel-respaldo-${hoyKey()}.json`; a.click(); DB.commit(() => {}, 'Copia de seguridad bajada', ''); },
-  borrarDemo: () => {
-    if (!confirm('¿Borrar todos los datos de prueba? Queda el club, el personal y las canchas.')) return;
+  borrarDemo: async () => {
+    if (!(await confirmar('Se borran reservas, ventas, cajas y stock de prueba. Quedan el club, el personal y las canchas.', 'Borrar datos de prueba'))) return;
     DB.commit(S => { S.reservas = {}; S.caja = { actual: null, cerradas: [] }; S.productos.forEach(p => p.stock = 0); S.entradas = []; S.demo = false; S.historial = []; }, 'Datos de demostración borrados', '');
     toast('Listo: cargá el stock real con “+ Entrada”');
   }
@@ -1346,8 +1348,8 @@ const ACT_NUBE = {
       nube.log('Reserva creada', `${c.nombre} ${h.fecha} ${h.h} · ${cliente}`);
     }, ['Reservas'], 'Turno reservado');
   },
-  bloquearSlot: () => {
-    const motivo = prompt('Motivo del bloqueo (ej.: mantenimiento, clase, torneo):', 'Mantenimiento'); if (motivo === null) return;
+  bloquearSlot: async () => {
+    const f = await pedir('Bloquear horario', [{ id: 'm', label: 'Motivo', valor: 'Mantenimiento', ph: 'Mantenimiento, clase, torneo…' }], { boton: 'Bloquear' }); if (!f) return; const motivo = f.m;
     const h = HOJA;
     nube.hacer(async () => { await q(sb.from('reservas').insert({ club_id: nube.C, cancha_id: h.c, fecha: h.fecha, ini: h.h, cliente: motivo || 'Bloqueado', estado: 'bloqueo', precio: 0, operador: OPN() })); nube.log('Horario bloqueado', `${h.fecha} ${h.h} · ${motivo}`); }, ['Reservas']);
   },
@@ -1363,16 +1365,16 @@ const ACT_NUBE = {
     nube.hacer(() => q(sb.rpc('reserva_cobrar', { p_club: nube.C, p_reserva: d.id, p_monto: monto, p_metodo: METODO, p_op: OPN(), p_parte: !!d.parte })),
       ['Reservas', 'Caja', 'Productos'], 'Cobrado ' + gs(monto));
   },
-  editarRes: d => {
+  editarRes: async d => {
     const r = DB.S.reservas[d.id];
-    const cliente = prompt('Nombre de quien reserva:', r.cliente); if (cliente === null) return;
-    const jug = prompt('Cantidad de jugadores:', r.jugadores); if (jug === null) return;
+    const f = await pedir('Editar reserva', [{ id: 'c', label: 'Nombre de quien reserva', valor: r.cliente }, { id: 'j', label: 'Jugadores', tipo: 'num', valor: r.jugadores }]); if (!f) return;
+    const cliente = f.c, jug = f.j;
     nube.hacer(async () => { await q(sb.from('reservas').update({ cliente: cliente.trim() || r.cliente, jugadores: Math.max(1, +jug || r.jugadores) }).eq('id', d.id)); nube.log('Reserva editada', resTxt(d.id)); }, ['Reservas']);
   },
-  cancelarRes: d => {
+  cancelarRes: async d => {
     const r = DB.S.reservas[d.id];
     if (pagado(r) > 0) { toast('Tiene pagos registrados: no se puede cancelar'); return; }
-    const motivo = prompt('¿Por qué se cancela? (queda en el historial)', 'Avisó que no viene'); if (motivo === null) return;
+    const f = await pedir('Cancelar reserva', [{ id: 'm', label: '¿Por qué se cancela? (queda en el historial)', valor: 'Avisó que no viene' }], { boton: 'Cancelar reserva', peligro: true }); if (!f) return; const motivo = f.m;
     cerrarHoja();
     nube.hacer(() => q(sb.rpc('reserva_cancelar', { p_club: nube.C, p_reserva: d.id, p_motivo: motivo, p_op: OPN() })), ['Reservas', 'Productos'], 'Reserva cancelada');
   },
@@ -1386,11 +1388,12 @@ const ACT_NUBE = {
     const items = CARRO.map(k => ({ id: k.prodId, cant: k.cant }));
     nube.hacer(async () => { await q(sb.rpc('pedido_a_cancha', { p_club: nube.C, p_reserva: r.id, p_items: items, p_op: OPN() })); CARRO = []; }, ['Reservas', 'Productos'], 'Cargado a ' + nombreCancha(r.canchaId));
   },
-  entrada: d => {
+  entrada: async d => {
     const p = DB.S.productos.find(x => x.id === d.p);
-    const cant = num(prompt(`¿Cuántas unidades de “${p.nombre}” entraron?`, '')); if (!cant) return;
+    const f = await pedir('Entrada · ' + p.nombre, [{ id: 'n', label: '¿Cuántas unidades entraron?', tipo: 'num', valor: '' }, ...(esAdmin() && p.tipo !== 'alquiler' ? [{ id: 'c', label: 'Costo por unidad de esta compra', tipo: 'gs', valor: p.costo }] : [])], { boton: 'Sumar al stock' }); if (!f) return;
+    const cant = Math.max(0, Math.round(f.n || 0)); if (!cant) { toast('Poné cuántas unidades entraron'); return; }
     let costo = null;
-    if (esAdmin() && p.tipo !== 'alquiler') { const c = prompt('Costo por unidad (Gs.) de esta compra:', miles(p.costo)); if (c === null) return; costo = num(c) || p.costo; }
+    if (esAdmin() && p.tipo !== 'alquiler') { costo = f.c || p.costo; }
     nube.hacer(() => q(sb.rpc('entrada_mercaderia', { p_club: nube.C, p_producto: p.id, p_cant: cant, p_costo: costo, p_op: OPN() })), ['Productos'], `Stock de ${p.nombre}: +${cant}`);
   },
   guardarProd: d => {
@@ -1402,8 +1405,8 @@ const ACT_NUBE = {
       nube.log(d.id ? 'Producto editado' : 'Producto nuevo', `${nombre} · ${gs(datos.precio)}`);
     }, ['Productos'], 'Guardado');
   },
-  borrarProd: d => {
-    const p = DB.S.productos.find(x => x.id === d.id); if (!confirm(`¿Quitar “${p.nombre}” de la cantina?`)) return;
+  borrarProd: async d => {
+    const p = DB.S.productos.find(x => x.id === d.id); if (!(await confirmar(`¿Quitar “${p.nombre}” de la cantina?`, 'Quitar'))) return;
     cerrarHoja();
     nube.hacer(async () => { await q(sb.from('productos').update({ activo: false }).eq('id', d.id)); nube.log('Producto quitado', p.nombre); }, ['Productos']);
   },
@@ -1411,10 +1414,10 @@ const ACT_NUBE = {
     const ini = num($('#cIni').value);
     nube.hacer(async () => { await q(sb.from('cajas').insert({ club_id: nube.C, operador: OPN(), inicial: ini })); nube.log('Caja abierta', gs(ini)); }, ['Caja'], 'Caja abierta');
   },
-  cerrarCaja: () => {
+  cerrarCaja: async () => {
     const c = DB.S.caja.actual; if (!$('#cCont').value) { toast('Escribí el efectivo contado'); $('#cCont').focus(); return; }
     const contado = num($('#cCont').value), ef = c.movs.filter(m => m.metodo === 'efectivo').reduce((a, m) => a + m.monto, 0), esperado = c.inicial + ef;
-    if (!confirm(`¿Cerrar la caja?\nEsperado ${gs(esperado)} · Contado ${gs(contado)} · Diferencia ${gs(contado - esperado)}`)) return;
+    if (!(await confirmar(`Esperado ${gs(esperado)} · Contado ${gs(contado)} · Diferencia ${gs(contado - esperado)}`, 'Cerrar caja', false))) return;
     nube.hacer(() => q(sb.rpc('caja_cerrar', { p_club: nube.C, p_contado: contado, p_op: OPN() })), ['Caja'], 'Caja cerrada');
   },
   guardarClub: () => {
@@ -1422,22 +1425,19 @@ const ACT_NUBE = {
     if (!ab || !ci) { toast('Completá los horarios'); return; }
     nube.hacer(async () => { await q(sb.from('clubs').update({ nombre: n, apertura: ab, cierre: ci, duracion: du }).eq('id', nube.C)); nube.log('Ajustes del club', `${n} · ${ab}–${ci} · ${du} min`); }, ['Club'], 'Guardado');
   },
-  nuevaCancha: () => {
-    const n = prompt('Nombre de la cancha:', 'Cancha ' + (DB.S.canchas.length + 1)); if (!n) return;
-    const p = num(prompt('Precio por turno (Gs.):', '150.000'));
-    nube.hacer(async () => { await q(sb.from('canchas').insert({ club_id: nube.C, nombre: n.trim(), precio: p, orden: DB.S.canchas.length + 1 })); nube.log('Cancha agregada', n); }, ['Canchas']);
+  nuevaCancha: async () => {
+    const f = await formCancha(null); if (!f || !f.n) return; const n = f.n, p = f.p;
+    nube.hacer(async () => { await q(sb.from('canchas').insert({ club_id: nube.C, nombre: n, precio: p, techada: f.t, orden: DB.S.canchas.length + 1 })); nube.log('Cancha agregada', `${n} · ${gs(p)}`); }, ['Canchas'], 'Cancha agregada');
   },
-  editCancha: d => {
+  editCancha: async d => {
     const c = DB.S.canchas.find(x => x.id === d.id);
-    const n = prompt('Nombre:', c.nombre); if (n === null) return;
-    const p = prompt('Precio por turno (Gs.):', miles(c.precio)); if (p === null) return;
-    const t = confirm('¿Es techada? (Aceptar = sí)');
+    const f = await formCancha(c); if (!f) return; const n = f.n, p = String(f.p), t = f.t;
     nube.hacer(async () => { await q(sb.from('canchas').update({ nombre: n.trim() || c.nombre, precio: num(p) || c.precio, techada: t }).eq('id', d.id)); nube.log('Cancha editada', `${n} · ${gs(num(p))}`); }, ['Canchas']);
   },
-  bloqCancha: d => {
+  bloqCancha: async d => {
     const c = DB.S.canchas.find(x => x.id === d.id);
     let m = '';
-    if (!c.bloqueo) { m = prompt('Motivo (ej.: lluvia, mantenimiento):', 'Mantenimiento'); if (!m) return; }
+    if (!c.bloqueo) { const f = await pedir('Bloquear ' + c.nombre, [{ id: 'm', label: 'Motivo', valor: 'Mantenimiento', ph: 'Lluvia, mantenimiento…' }], { boton: 'Bloquear' }); if (!f || !f.m) return; m = f.m; }
     nube.hacer(async () => { await q(sb.from('canchas').update({ bloqueo: m }).eq('id', d.id)); nube.log(m ? 'Cancha bloqueada' : 'Cancha habilitada', c.nombre + (m ? ' · ' + m : '')); }, ['Canchas']);
   },
   nuevoOp: () => editarOpNube(null), editOp: d => editarOpNube(d.id),
@@ -1506,6 +1506,45 @@ function INICIO() {
   nube.iniciar();
 }
 
+/* ---------- formularios propios (en lugar de las ventanitas del navegador, que algunos navegadores bloquean) ---------- */
+let PEDIR = null;
+function pedir(titulo, campos, o = {}) {
+  return new Promise(res => {
+    if (PEDIR) PEDIR.res(null);
+    PEDIR = { res, campos, hoja: HOJA }; HOJA = null;
+    const campo = c => c.tipo === 'check'
+      ? `<label class="row" style="font-weight:600"><input type="checkbox" id="pd_${c.id}" ${c.valor ? 'checked' : ''} style="width:22px;height:22px"> ${esc(c.label)}</label>`
+      : `<label class="f">${esc(c.label)}<input class="inp" id="pd_${c.id}" autocomplete="off" ${c.tipo === 'gs' ? 'inputmode="numeric" oninput="formatoMiles(this)"' : c.tipo === 'num' ? 'type="number" min="0" inputmode="numeric"' : ''} value="${esc(c.tipo === 'gs' ? (c.valor ? miles(c.valor) : '') : (c.valor ?? ''))}" placeholder="${esc(c.ph || '')}"></label>`;
+    $('#sheet').innerHTML = `<div class="sheet-h"><h2>${esc(titulo)}</h2><button class="iconbtn" data-act="pedirNo" aria-label="Cerrar"><svg><use href="#i-x"/></svg></button></div>
+      <div class="sheet-b">${o.texto ? `<p style="margin:0;font-size:17px">${esc(o.texto)}</p>` : ''}${campos.map(campo).join('')}
+      <div class="row"><button class="btn ${o.peligro ? 'btn-danger' : 'btn-ink'}" data-act="pedirSi">${esc(o.boton || 'Guardar')}</button><button class="btn btn-line" data-act="pedirNo">Volver</button></div></div>`;
+    $('#scrim').classList.remove('hidden'); requestAnimationFrame(() => { $('#scrim').classList.add('on'); $('#sheet').classList.add('on'); });
+    $('#sheet').setAttribute('aria-hidden', 'false');
+    setTimeout(() => { const i = $('#sheet').querySelector('input:not([type=checkbox])'); if (i) { i.focus(); if (i.select) i.select(); } }, 250);
+  });
+}
+function cerrarPedir(valores) {
+  const p = PEDIR; if (!p) return; PEDIR = null;
+  if (p.hoja) { HOJA = p.hoja; renderHoja(); } else cerrarHoja();
+  p.res(valores);
+}
+const confirmar = (texto, boton = 'Confirmar', peligro = true) => pedir('¿Confirmás?', [], { texto, boton, peligro }).then(v => !!v);
+function formCancha(c) {
+  return pedir(c ? 'Editar ' + c.nombre : 'Nueva cancha', [
+    { id: 'n', label: 'Nombre', valor: c ? c.nombre : 'Cancha ' + (DB.S.canchas.length + 1) },
+    { id: 'p', label: 'Precio por turno', tipo: 'gs', valor: c ? c.precio : 150000 },
+    { id: 't', label: 'Es techada', tipo: 'check', valor: c ? c.techada : false }], { boton: c ? 'Guardar' : 'Agregar cancha' });
+}
+Object.assign(ACT, {
+  pedirSi: () => {
+    if (!PEDIR) return; const v = {};
+    for (const c of PEDIR.campos) { const el = $('#pd_' + c.id); v[c.id] = c.tipo === 'check' ? el.checked : c.tipo === 'gs' ? num(el.value) : c.tipo === 'num' ? (el.value === '' ? null : +el.value) : el.value.trim(); }
+    cerrarPedir(v);
+  },
+  pedirNo: () => cerrarPedir(null),
+  cerrarHoja: () => (PEDIR ? cerrarPedir(null) : cerrarHoja())
+});
+
 /* ---------- eventos ---------- */
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
@@ -1517,7 +1556,8 @@ document.addEventListener('change', e => {
   if (k === 'destino') { DESTINO = e.target.value; render(); }
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && $('#sheet').classList.contains('on')) cerrarHoja();
+  if (e.key === 'Escape' && $('#sheet').classList.contains('on')) ACT.cerrarHoja();
+  if (e.key === 'Enter' && PEDIR && e.target.closest && e.target.closest('#sheet') && e.target.matches('input')) { e.preventDefault(); ACT.pedirSi(); }
   if (!$('#lock').classList.contains('hidden')) { if (/^\d$/.test(e.key)) pinKey(e.key); else if (e.key === 'Backspace') pinKey('c'); }
 });
 let tT; function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tT); tT = setTimeout(() => t.classList.remove('on'), 2600); }
