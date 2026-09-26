@@ -309,6 +309,8 @@ a.btn{text-decoration:none}
 .sug{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}.sug:empty{display:none}
 .sug button{border:1px solid var(--line,#c9c6bc);background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .sug button small{font-weight:500;opacity:.7;margin-left:6px}
+.solo-cel{display:none}
+.carro-bar{display:none}
 .demo-flag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--plate-2);padding:3px 8px;border-radius:3px}
 .empty{padding:26px 18px;text-align:center;color:var(--ink-3)}
 .empty b{display:block;color:var(--ink);font-family:var(--fc);font-size:20px;margin-bottom:4px}
@@ -358,7 +360,7 @@ a.btn{text-decoration:none}
   .slot.cobrada .stamp{right:3px;bottom:auto;top:4px;font-size:9px;padding:0 3px;transform:rotate(-4deg)}
   .slot.cobrada .n{margin-top:10px}
   .nowtag{display:none}
-  .datebar .day{font-size:26px;flex-basis:100%;order:-1}
+  .datebar .day{font-size:26px}
   :root{--row:32px}
   .bh{font-size:16px}
   .bt{font-size:15px;padding-right:6px}
@@ -367,6 +369,39 @@ a.btn{text-decoration:none}
   .sheet{top:auto;height:92dvh;width:100%;border-radius:10px 10px 0 0;transform:translateY(102%)}
   .grid2{grid-template-columns:1fr}
   .pad-num{grid-template-columns:repeat(3,72px)}
+  /* agenda en el celular: el tablero es lo principal */
+  .solo-pc{display:none} .solo-cel{display:inline}
+  .agenda{gap:10px}
+  .proximo{grid-template-columns:auto 1fr;gap:0 10px;padding:10px 12px 8px}
+  .proximo .lbl{font-size:13px;letter-spacing:.08em;color:var(--ink-2)}
+  .proximo .big{font-size:36px}
+  .proximo .pc{font-size:18px;line-height:1.1}
+  .proximo .hasta{display:none}
+  .proximo .row{margin-top:8px!important;flex-wrap:nowrap;gap:8px}
+  .proximo .row .btn{flex:1;min-height:40px;padding:0 10px;font-size:14px}
+  .caja-line{margin-top:8px;padding-top:8px;font-size:14px}
+  .datebar{margin-bottom:8px;gap:6px}
+  .datebar .day{font-size:26px}
+  .datebar .demo-flag{display:none}
+  .datebar .day small{font-size:13px;margin-top:2px}
+  .datebar .iconbtn{width:40px;height:40px}
+  .board-wrap{height:calc(100dvh - 205px - env(safe-area-inset-bottom));min-height:360px;max-height:none}
+  .bh{font-size:13px;letter-spacing:.03em}
+  .bh:not(:first-child)>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 2px 2px}
+  .slot .x{white-space:normal;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .ayuda-tablero{display:none}
+  /* cantina: el total y el botón de cobrar siempre a mano */
+  .carro-bar{display:flex;align-items:center;gap:10px;position:fixed;left:10px;right:10px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:34;
+    background:var(--ink);color:var(--plate);border:0;border-radius:8px;padding:12px 14px;font:inherit;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.35);text-align:left}
+  .carro-bar .t{font-family:var(--fc);font-weight:800;font-size:20px;margin-left:auto}
+  .carro-bar .ir{background:var(--brand);color:#fff;font-family:var(--fc);font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:13px;padding:6px 10px;border-radius:4px}
+  .cantina{padding-bottom:70px}
+  /* listas con varios botones (canchas, personal, dispositivos): el nombre arriba, los botones abajo */
+  .line:has(> .btn ~ .btn){flex-wrap:wrap;row-gap:8px}
+  .line:has(> .btn ~ .btn) > .grow{flex:1 1 100%}
+  .line:has(> .btn ~ .btn) > .btn{flex:1}
+  .row:has(#aDur){flex-wrap:wrap}
+  .row:has(#aDur) > label:last-child{flex-basis:100%}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -743,7 +778,7 @@ function vAgenda() {
         const cons = (r.consumos || []).reduce((a, k) => a + k.cant, 0);
         cls = 'res' + (r.estado === 'cobrada' ? ' cobrada' : '');
         n = hy(r.cliente);
-        x = `<span class="xr">${rango(r)}</span>` + (r.estado === 'cobrada' ? '' : '<span class="xs"> · </span>' + `<span class="xs">${cons ? `${cons} consumo${cons > 1 ? 's' : ''} · ` : ''}${gs(totalReserva(r) - pagado(r))}</span>`);
+        x = `<span class="xr">${toHora(toMin(r.ini))}–<wbr>${toHora(finDe(r))}</span>` + (r.estado === 'cobrada' ? '' : '<span class="xs"> · </span>' + `<span class="xs">${cons ? `${cons} consumo${cons > 1 ? 's' : ''} · ` : ''}${gs(totalReserva(r) - pagado(r))}</span>`);
         if (r.estado === 'cobrada') extra = '<span class="stamp">COBRADO</span>';
         else if (finDe(r) <= now && (esHoy || diaPasado) || diaPasado) extra = '<span class="stamp debe">DEBE</span>';
         if (r.id === NUEVA) cls += ' drop';
@@ -770,7 +805,7 @@ function vAgenda() {
   <div class="agenda">
     <section aria-label="Tablero de canchas">
       <div class="datebar">
-        <div class="day">${diaLargo(FECHA)}<small>${esHoy ? 'Hoy' : FECHA < hoyKey() ? 'Día pasado' : 'Próximamente'} · ${String(horasLibres).replace('.', ',')} h libres</small></div>
+        <div class="day"><span class="solo-pc">${diaLargo(FECHA)}</span><span class="solo-cel">${DIAS_C[keyToDate(FECHA).getDay()]} ${keyToDate(FECHA).getDate()} ${MESES[keyToDate(FECHA).getMonth()].slice(0, 3)}</span><small>${esHoy ? 'Hoy' : FECHA < hoyKey() ? 'Día pasado' : 'Próximamente'} · ${String(horasLibres).replace('.', ',')} h libres</small></div>
         ${S.demo ? '<span class="demo-flag">Datos de demostración</span>' : ''}
         <div class="row" style="margin-left:auto">
           <button class="iconbtn" data-act="dia" data-d="-1" aria-label="Día anterior"><svg><use href="#i-prev"/></svg></button>
@@ -779,7 +814,7 @@ function vAgenda() {
           <button class="iconbtn" data-act="dia" data-d="1" aria-label="Día siguiente"><svg><use href="#i-next"/></svg></button>
         </div>
       </div>
-      ${S.canchas.length ? `<div class="board-wrap"><div class="board" style="grid-template-columns:var(--tc) repeat(${cols},minmax(var(--cw),1fr));grid-template-rows:var(--bh) ${slots.map(s => pasadaFila(s) ? 'var(--rowp)' : 'var(--row)').join(' ')}">${cells}${nowline}</div></div><div class="muted" style="font-size:14px;margin-top:10px">Tocá un horario libre para reservar por hora. Tocá una reserva para sumar tiempo, cargar consumos o cobrar.</div>`
+      ${S.canchas.length ? `<div class="board-wrap"><div class="board" style="grid-template-columns:var(--tc) repeat(${cols},minmax(var(--cw),1fr));grid-template-rows:var(--bh) ${slots.map(s => pasadaFila(s) ? 'var(--rowp)' : 'var(--row)').join(' ')}">${cells}${nowline}</div></div><div class="muted ayuda-tablero" style="font-size:14px;margin-top:10px">Tocá un horario libre para reservar por hora. Tocá una reserva para sumar tiempo, cargar consumos o cobrar.</div>`
         : `<div class="plate empty"><b>Todavía no hay canchas</b>${esAdmin() ? 'Agregalas con el botón “Agregar cancha” o desde Ajustes → Canchas.' : 'Pedile al administrador que las cargue.'}</div>`}
     </section>
     <aside class="rail">
@@ -788,10 +823,10 @@ function vAgenda() {
         ${esAdmin() ? `<button class="btn btn-ink" data-act="nuevaCancha"><svg><use href="#i-plus"/></svg>Agregar cancha</button>` : `<div class="muted">Pedile al administrador que las cargue en Ajustes.</div>`}</div>` : `
       <div class="plate proximo">
         <h2 class="lbl">Próximo turno libre${esHoy ? '' : ' · ' + DIAS_C[keyToDate(FECHA).getDay()]}</h2>
-        ${prox ? `<div class="big">${proxAhora ? `<em>${toHora(toMin(prox.ini))}</em>` : toHora(toMin(prox.ini))}</div><div class="pc">${esc(prox.cancha.nombre)}${proxAhora ? ' · ya' : ''}</div><div class="muted" style="font-size:14px">libre hasta las ${prox.hasta}</div>`
+        ${prox ? `<div class="big">${proxAhora ? `<em>${toHora(toMin(prox.ini))}</em>` : toHora(toMin(prox.ini))}</div><div class="pc">${esc(prox.cancha.nombre)}${proxAhora ? ' · ya' : ''}</div><div class="muted hasta" style="font-size:14px">libre hasta las ${prox.hasta}</div>`
           : `<div class="big" style="font-size:30px">Todo reservado</div><div class="muted">No quedan turnos libres este día.</div>`}
         <div class="row" style="margin-top:14px">
-          <button class="btn btn-ink btn-sm" data-act="copiarDisp" title="Copia los horarios libres del día para pegarlos en WhatsApp"><svg><use href="#i-copy"/></svg>Copiar para WhatsApp</button>
+          <button class="btn btn-ink btn-sm" data-act="copiarDisp" title="Copia los horarios libres del día para pegarlos en WhatsApp"><svg><use href="#i-copy"/></svg><span class="solo-pc">Copiar para WhatsApp</span><span class="solo-cel">Copiar libres</span></button>
           ${prox ? `<button class="btn btn-line btn-sm" data-act="abrirSlot" data-c="${prox.cancha.id}" data-h="${prox.ini}">Reservar</button>` : ''}
         </div>
         <button class="caja-line" data-act="ir" data-v="caja">${caja ? `<span class="sello">Caja abierta</span><b>${gs(cajaTot)}</b>` : `<span class="sello off">Caja cerrada</span><span>Abrir para cobrar</span>`}<svg><use href="#i-next"/></svg></button>
@@ -1012,7 +1047,7 @@ function vCantina() {
           <span class="spread"><span class="pp">${miles(p.precio)}</span><span class="ps ${p.stock <= p.minimo ? 'low' : ''}">${soloCancha ? 'Solo a cancha' : (p.tipo === 'alquiler' ? p.stock + ' disp.' : 'Stock ' + p.stock)}</span></span></button>`;
       }).join('') || `<div class="plate empty"><b>No hay productos</b>${esAdmin() ? 'Cargalos en Inventario.' : ''}</div>`}</div>
     </section>
-    <aside class="plate pad ticket stack">
+    <aside class="plate pad ticket stack" id="ticket">
       <div class="spread"><h2>Pedido</h2>${CARRO.length ? '<button class="btn btn-line btn-sm" data-act="vaciar">Vaciar</button>' : ''}</div>
       <label class="f">Cobrar
         <select class="inp" data-in="destino">
@@ -1029,7 +1064,8 @@ function vCantina() {
           : `<div class="note warn">Abrí la caja para cobrar ventas directas. Igual podés cargar consumos a la cuenta de una cancha.</div><button class="btn btn-ink" data-act="ir" data-v="caja">Abrir caja</button>`)
         : `<button class="btn btn-ink btn-block" data-act="cargarCancha" ${CARRO.length ? '' : 'disabled'}>Cargar a la cuenta de la cancha</button><div class="muted" style="font-size:13px">Se cobra junto con el turno, desde la Agenda.</div>`}
     </aside>
-  </div>`;
+  </div>
+  ${CARRO.length ? `<button class="carro-bar" data-act="verCarro"><span><b>${CARRO.reduce((a, k) => a + k.cant, 0)}</b> en el pedido</span><span class="t">${gs(total)}</span><span class="ir">Ver y cobrar</span></button>` : ''}`;
 }
 function vInventario() {
   const S = DB.S, adm = esAdmin();
@@ -1731,6 +1767,7 @@ function formCancha(c) {
     { id: 't', label: 'Es techada', tipo: 'check', valor: c ? c.techada : false }], { boton: c ? 'Guardar' : 'Agregar cancha' });
 }
 Object.assign(ACT, {
+  verCarro: () => $('#ticket')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
   pedirSi: () => {
     if (!PEDIR) return; const v = {};
     for (const c of PEDIR.campos) { const el = $('#pd_' + c.id); v[c.id] = c.tipo === 'check' ? el.checked : c.tipo === 'gs' ? num(el.value) : c.tipo === 'num' ? (el.value === '' ? null : +el.value) : el.value.trim(); }
