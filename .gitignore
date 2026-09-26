@@ -1,0 +1,5 @@
+# Solo se publica la app. Todo lo demás (notas, pruebas, capturas, diseño) queda local.
+*
+!.gitignore
+!index.html
+!.nojekyll
