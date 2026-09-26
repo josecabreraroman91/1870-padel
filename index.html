@@ -302,6 +302,8 @@ label.f{display:grid;gap:5px;font-size:14px;font-weight:600;color:var(--ink-2)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .aviso-servicio{margin:0 0 12px;padding:10px 14px;border-radius:var(--r);background:#FFF4D6;color:#5A3B00;border:1px solid #E9C46A;font-size:15px;font-weight:600}
 .aviso-servicio.grave{background:#FDE2DF;color:#7A1510;border-color:#E39A92}
+body.ocupado [data-act]{pointer-events:none}
+body.ocupado{cursor:progress}
 .demo-flag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--plate-2);padding:3px 8px;border-radius:3px}
 .empty{padding:26px 18px;text-align:center;color:var(--ink-3)}
 .empty b{display:block;color:var(--ink);font-family:var(--fc);font-size:20px;margin-bottom:4px}
@@ -439,11 +441,15 @@ const miles = n => String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\
 const gs = n => 'Gs. ' + miles(n);
 const num = v => Number(String(v ?? '').replace(/\./g, '').replace(/[^\d-]/g, '')) || 0;
 const pad2 = n => String(n).padStart(2, '0');
-const hoyKey = (d = new Date()) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const FMT_PY = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Asuncion', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+function ahoraPY() { const p = {}; for (const x of FMT_PY.formatToParts(new Date())) p[x.type] = x.value; return { fecha: `${p.year}-${p.month}-${p.day}`, min: (+p.hour % 24) * 60 + +p.minute }; }
+// hoy = fecha de Paraguay aunque el reloj del equipo tenga otra zona; con una fecha dada, la formatea tal cual
+const hoyKey = d => d ? `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` : ahoraPY().fecha;
 const keyToDate = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
 const addDays = (k, n) => { const d = keyToDate(k); d.setDate(d.getDate() + n); return hoyKey(d); };
 const toMin = h => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
 const toHora = m => `${pad2(Math.floor(m / 60) % 24)}:${pad2(m % 60)}`;
+const toIni = m => `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`; // clave del turno: 24:30 = 00:30 de esa misma noche
 const hhmm = ts => { const d = new Date(ts); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
 const fechaCorta = ts => { const d = new Date(ts); return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)} ${hhmm(ts)}`; };
 const diaLargo = k => { const d = keyToDate(k); return `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`; };
@@ -545,7 +551,7 @@ function sembrarDemo(S) {
 const PASO = 30;
 function limites(club) { const a = toMin(club.apertura); let c = toMin(club.cierre); if (c <= a) c += 1440; return { a, c }; }
 function slotsDe(club) { const { a, c } = limites(club); const out = []; for (let m = a; m + PASO <= c; m += PASO) out.push({ ini: m }); return out; }
-const ahoraMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
+const ahoraMin = () => ahoraPY().min;
 const durDe = r => +r.dur || 60;
 const finDe = r => toMin(r.ini) + durDe(r);
 function reservasDia(fk, canchaId) { return Object.values(DB.S.reservas).filter(r => r.fecha === fk && r.estado !== 'cancelada' && (!canchaId || r.canchaId === canchaId)); }
@@ -554,14 +560,14 @@ function reservaEn(fk, canchaId, min) { return reservasDia(fk, canchaId).find(r 
 function libreHasta(fk, canchaId, min, excepto) { let fin = limites(DB.S.club).c; for (const r of reservasDia(fk, canchaId)) { const i = toMin(r.ini); if (r.id !== excepto && i >= min && i < fin) fin = i; } return fin; }
 const precioPor = (c, dur) => Math.round((+c.precio || 0) * dur / 60);
 function fmtDur(m) { const h = Math.floor(m / 60), mm = m % 60; return (h ? h + ' h' : '') + (mm ? (h ? ' ' : '') + mm + ' min' : ''); }
-const rango = r => `${r.ini}–${toHora(finDe(r))}`;
+const rango = r => `${toHora(toMin(r.ini))}–${toHora(finDe(r))}`;
 function totalReserva(r) { return (+r.precio || 0) + (r.consumos || []).reduce((a, c) => a + c.precio * c.cant, 0); }
 function pagado(r) { return (r.pagos || []).reduce((a, p) => a + p.monto, 0); }
 function proximoLibre(fk) {
   const S = DB.S, esHoy = fk === hoyKey(), now = ahoraMin();
   for (const s of slotsDe(S.club)) {
     if (esHoy && s.ini + PASO <= now) continue;
-    for (const c of S.canchas) if (!c.bloqueo && !reservaEn(fk, c.id, s.ini)) return { cancha: c, ini: toHora(s.ini), hasta: toHora(libreHasta(fk, c.id, s.ini)) };
+    for (const c of S.canchas) if (!c.bloqueo && !reservaEn(fk, c.id, s.ini)) return { cancha: c, ini: toIni(s.ini), hasta: toHora(libreHasta(fk, c.id, s.ini)) };
   }
   return null;
 }
@@ -576,10 +582,10 @@ function tramosLibres(fk, c) {
 }
 
 /* ---------- sesión (PIN) ---------- */
-let OP = null, NUEVA = null, IR_AHORA = true;
+let OP = null, OP_PIN = '', NUEVA = null, IR_AHORA = true;
 let VISTA = 'agenda', FECHA = hoyKey(), HOJA = null;
 function esAdmin() { return OP && OP.rol === 'admin'; }
-function restaurarSesion() { try { let id = sessionStorage.getItem('padel.op') || ''; if (id.startsWith('{')) id = JSON.parse(id).id; OP = DB.S.operadores.find(o => o.id === id && o.activo) || null; } catch (e) { OP = null; } }
+function restaurarSesion() { try { let id = sessionStorage.getItem('padel.op') || ''; if (id.startsWith('{')) id = JSON.parse(id).id; OP = DB.S.operadores.find(o => o.id === id && o.activo) || null; if (DB.nube && OP && OP.rol === 'admin') OP = null; } catch (e) { OP = null; } }
 
 let pinSel = null, pinBuf = '';
 function renderLock() {
@@ -615,6 +621,13 @@ function avisoServicio() {
   return '';
 }
 const fmtFechaCorta = f => { const [a, m, d] = String(f).split('-'); return `${d}/${m}/${a}`; };
+let CONSERVAR = false;
+function ponerHTML(el, html) {
+  if (!CONSERVAR) { el.innerHTML = html; return; }
+  const v = {}; el.querySelectorAll('input[id],textarea[id],select[id]').forEach(i => { if (i.type === 'checkbox') v[i.id] = i.checked; else v[i.id] = i.value; });
+  el.innerHTML = html;
+  for (const id in v) { const i = el.querySelector('#' + CSS.escape(id)); if (!i || id === 'rPrecio') continue; if (i.type === 'checkbox') i.checked = v[id]; else i.value = v[id]; }
+}
 function render() {
   document.querySelectorAll('.js-club').forEach(e => e.textContent = DB.S.club.nombre); document.title = DB.S.club.nombre + ' · Gestión ' + VERSION;
   if (DB.nube && nube.estado !== 'ok') { OP = null; $('#app').classList.add('hidden'); $('#lock').classList.remove('hidden'); renderGate(); cerrarHoja(true); return; }
@@ -629,7 +642,7 @@ function render() {
   $('#whoName').textContent = OP.nombre;
   const f = { agenda: vAgenda, cantina: vCantina, caja: vCaja, resumen: vResumen, ajustes: vAjustes }[VISTA];
   const prev = document.querySelector('.board-wrap'), sl = prev?.scrollLeft || 0, st = prev?.scrollTop || 0;
-  $('#main').innerHTML = avisoServicio() + f();
+  ponerHTML($('#main'), avisoServicio() + f());
   const bw = document.querySelector('.board-wrap');
   if (bw) {
     if (IR_AHORA) {
@@ -677,7 +690,7 @@ function vAgenda() {
       const vacioPasado = cls === 'libre' && todaPasada;
       if (vacioPasado) cls += ' pasado';
       if (r && span > 1) cls += ' larga';
-      const h = r ? r.ini : hora;
+      const h = r ? r.ini : toIni(s.ini);
       const aria = `${c.nombre}, ${r ? rango(r) : hora}: ${vacioPasado ? 'sin reservar, ya pasó' : cls.startsWith('libre') ? 'libre' : (r ? r.cliente : c.bloqueo)}`;
       cells += `<div class="cell${todaPasada && esHoy ? ' pas' : ''}" style="grid-row:${fila} / span ${span};grid-column:${col}"><button class="slot ${cls}" data-act="abrirSlot" data-c="${c.id}" data-h="${h}" aria-label="${esc(aria)}" ${vacioPasado ? 'disabled' : ''}><span class="n">${n}</span>${x ? `<span class="x">${x}</span>` : ''}${extra}</button></div>`;
       i += span - 1;
@@ -714,7 +727,7 @@ function vAgenda() {
         ${esAdmin() ? `<button class="btn btn-ink" data-act="nuevaCancha"><svg><use href="#i-plus"/></svg>Agregar cancha</button>` : `<div class="muted">Pedile al administrador que las cargue en Ajustes.</div>`}</div>` : `
       <div class="plate proximo">
         <h2 class="lbl">Próximo turno libre${esHoy ? '' : ' · ' + DIAS_C[keyToDate(FECHA).getDay()]}</h2>
-        ${prox ? `<div class="big">${proxAhora ? `<em>${prox.ini}</em>` : prox.ini}</div><div class="pc">${esc(prox.cancha.nombre)}${proxAhora ? ' · ya' : ''}</div><div class="muted" style="font-size:14px">libre hasta las ${prox.hasta}</div>`
+        ${prox ? `<div class="big">${proxAhora ? `<em>${toHora(toMin(prox.ini))}</em>` : toHora(toMin(prox.ini))}</div><div class="pc">${esc(prox.cancha.nombre)}${proxAhora ? ' · ya' : ''}</div><div class="muted" style="font-size:14px">libre hasta las ${prox.hasta}</div>`
           : `<div class="big" style="font-size:30px">Todo reservado</div><div class="muted">No quedan turnos libres este día.</div>`}
         <div class="row" style="margin-top:14px">
           <button class="btn btn-ink btn-sm" data-act="copiarDisp" title="Copia los horarios libres del día para pegarlos en WhatsApp"><svg><use href="#i-copy"/></svg>Copiar para WhatsApp</button>
@@ -751,7 +764,7 @@ function renderHoja() {
   const c = S.canchas.find(x => x.id === h.c); if (!c) { cerrarHoja(); return; }
   const r = reservaEn(h.fecha, c.id, toMin(h.h));
   let body = '';
-  const head = `<div class="sheet-h"><div><div class="muted" style="font-size:14px;font-weight:600">${diaLargo(h.fecha)}</div><h2>${esc(c.nombre)} · ${r ? rango(r) : h.h}</h2></div><button class="iconbtn" data-act="cerrarHoja" aria-label="Cerrar"><svg><use href="#i-x"/></svg></button></div>`;
+  const head = `<div class="sheet-h"><div><div class="muted" style="font-size:14px;font-weight:600">${diaLargo(h.fecha)}</div><h2>${esc(c.nombre)} · ${r ? rango(r) : toHora(toMin(h.h))}</h2></div><button class="iconbtn" data-act="cerrarHoja" aria-label="Cerrar"><svg><use href="#i-x"/></svg></button></div>`;
   if (c.bloqueo) {
     body = `<div class="note warn">Esta cancha está bloqueada: <b>${esc(c.bloqueo)}</b>.</div>${esAdmin() ? '<button class="btn btn-line" data-act="ir" data-v="ajustes">Cambiar en Ajustes</button>' : ''}`;
   } else if (!r) {
@@ -763,7 +776,7 @@ function renderHoja() {
         const ops = []; for (let m = Math.min(60, max); m <= max; m += PASO) ops.push(m);
         if (!ops.includes(DUR_SEL)) DUR_SEL = ops.includes(60) ? 60 : ops[ops.length - 1];
         return `<div class="f"><span>¿Cuánto tiempo?</span><div class="durs" role="group" aria-label="Duración">${ops.map(m => `<button data-act="durSel" data-m="${m}" aria-pressed="${m === DUR_SEL}">${fmtDur(m)}</button>`).join('')}</div>
-          <span class="muted" style="font-weight:500">De ${h.h} a ${toHora(ini + DUR_SEL)} · ${gs(c.precio)} la hora${max < 360 ? ` · libre hasta las ${toHora(ini + max)}` : ''}</span></div>
+          <span class="muted" style="font-weight:500">De ${toHora(ini)} a ${toHora(ini + DUR_SEL)} · ${gs(c.precio)} la hora${max < 360 ? ` · libre hasta las ${toHora(ini + max)}` : ''}</span></div>
         <label class="f">Precio del alquiler<input class="inp" id="rPrecio" inputmode="numeric" value="${miles(precioPor(c, DUR_SEL))}" oninput="formatoMiles(this)" ${esAdmin() ? '' : 'readonly'}></label>`;
       })()}
       <button class="btn btn-ink btn-block" data-act="reservar">Reservar ${fmtDur(DUR_SEL)}</button>
@@ -787,7 +800,7 @@ function renderHoja() {
         <div class="lines">
           <div class="line"><div class="grow">Cancha ${rango(r)}<div class="sub">${fmtDur(durDe(r))}</div></div><b>${gs(r.precio)}</b></div>
           ${(r.consumos || []).map((k, i) => `<div class="line"><div class="grow">${esc(k.nombre)}<div class="sub">${gs(k.precio)} c/u${k.tipo === 'alquiler' ? ' · alquiler, vuelve al stock al cobrar' : ''}</div></div>
-            ${cerrada ? `<span>×${k.cant}</span>` : `<span class="qty"><button data-act="consumo" data-id="${r.id}" data-i="${i}" data-d="-1" aria-label="Quitar uno"><svg><use href="#i-minus"/></svg></button><span>${k.cant}</span><button data-act="consumo" data-id="${r.id}" data-i="${i}" data-d="1" aria-label="Agregar uno"><svg><use href="#i-plus"/></svg></button></span>`}
+            ${cerrada ? `<span>×${k.cant}</span>` : `<span class="qty"><button data-act="consumo" data-id="${r.id}" data-p="${k.prodId}" data-d="-1" aria-label="Quitar uno"><svg><use href="#i-minus"/></svg></button><span>${k.cant}</span><button data-act="consumo" data-id="${r.id}" data-p="${k.prodId}" data-d="1" aria-label="Agregar uno"><svg><use href="#i-plus"/></svg></button></span>`}
             <b style="min-width:92px;text-align:right">${gs(k.precio * k.cant)}</b></div>`).join('')}
         </div>
       </div>
@@ -804,10 +817,14 @@ function renderHoja() {
         <button class="btn btn-line btn-sm" data-act="editarRes" data-id="${r.id}">Editar datos</button>
         <button class="btn btn-danger btn-sm" data-act="cancelarRes" data-id="${r.id}">Cancelar reserva</button></div>`}`;
   }
-  $('#sheet').innerHTML = head + `<div class="sheet-b">${body}</div>`;
+  // el nombre y el teléfono escritos se conservan al cambiar la duración o si llega un cambio de otra pantalla
+  const prev = { c: $('#rCliente')?.value, t: $('#rTel')?.value };
+  ponerHTML($('#sheet'), head + `<div class="sheet-b">${body}</div>`);
+  if (!r && !c.bloqueo) { if (prev.c && $('#rCliente')) $('#rCliente').value = prev.c; if (prev.t && $('#rTel')) $('#rTel').value = prev.t; }
 }
 let METODO = 'efectivo';
 function cobroBloque(r, saldo, parte, jug) {
+  if (saldo <= 0) return `<div class="note">No queda nada por cobrar.</div><button class="btn btn-ink" data-act="cobrar" data-id="${r.id}" data-monto="0" data-cerrar="1">Cerrar la cuenta</button>`;
   if (!DB.S.caja.actual) return `<div class="note warn">Para cobrar tiene que haber una caja abierta.</div><button class="btn btn-ink" data-act="ir" data-v="caja">Abrir caja</button>`;
   return `<div class="seg" role="group" aria-label="Forma de pago">${METODOS.map(([k, t]) => `<button data-act="metodo" data-m="${k}" aria-pressed="${METODO === k}">${t}</button>`).join('')}</div>
     <div class="row" style="align-items:center"><span class="muted" style="font-size:14px">Dividir la cuenta</span>
@@ -879,7 +896,9 @@ const ACT = {
     }, +d.d > 0 ? 'Consumo a cancha' : 'Consumo quitado', resTxt(d.id));
   },
   cobrar: d => {
-    const monto = +d.monto; if (!(monto > 0)) return;
+    const monto = +d.monto;
+    if (d.cerrar) { DB.commit(S => { const r = S.reservas[d.id]; r.estado = 'cobrada'; r.cobradaTs = Date.now(); devolverAlquileres(S, r); }, 'Cuenta cerrada', resTxt(d.id)); return; }
+    if (!(monto > 0)) return;
     if (!DB.S.caja.actual) { toast('Abrí la caja primero'); return; }
     DB.commit(S => {
       const r = S.reservas[d.id];
@@ -909,7 +928,7 @@ function resTxt(id) { const r = DB.S.reservas[id]; return r ? `${nombreCancha(r.
 
 /* ---------- CANTINA ---------- */
 let CAT = 'Todo', CARRO = [], DESTINO = 'directa', SUBC = 'vender';
-function reservasAbiertasHoy() { return Object.values(DB.S.reservas).filter(r => r.fecha === hoyKey() && (r.estado === 'reservada' || r.estado === 'enjuego')).sort((a, b) => a.ini.localeCompare(b.ini)); }
+function reservasAbiertasHoy() { const h = hoyKey(), ay = addDays(h, -1); return Object.values(DB.S.reservas).filter(r => (r.fecha === h || r.fecha === ay) && (r.estado === 'reservada' || r.estado === 'enjuego')).sort((a, b) => a.fecha.localeCompare(b.fecha) || a.ini.localeCompare(b.ini)); }
 function vCantina() {
   const S = DB.S;
   const tabs = `<div class="seg seg-panel" role="tablist">${[['vender', 'Vender'], ['inventario', 'Inventario']].map(([k, t]) => `<button role="tab" data-act="subc" data-s="${k}" aria-pressed="${SUBC === k}">${t}</button>`).join('')}</div>`;
@@ -936,7 +955,7 @@ function vCantina() {
       <label class="f">Cobrar
         <select class="inp" data-in="destino">
           <option value="directa" ${DESTINO === 'directa' ? 'selected' : ''}>Venta directa (se paga ahora)</option>
-          ${abiertas.map(r => `<option value="${r.id}" ${DESTINO === r.id ? 'selected' : ''}>A la cuenta: ${esc(nombreCancha(r.canchaId))} ${r.ini} · ${esc(r.cliente)}</option>`).join('')}
+          ${abiertas.map(r => `<option value="${r.id}" ${DESTINO === r.id ? 'selected' : ''}>A la cuenta: ${esc(nombreCancha(r.canchaId))} ${r.fecha !== hoyKey() ? 'anoche ' : ''}${toHora(toMin(r.ini))} · ${esc(r.cliente)}</option>`).join('')}
         </select></label>
       <div class="lines">${CARRO.map((k, i) => `<div class="line"><div class="grow">${esc(k.nombre)}<div class="sub">${gs(k.precio)} c/u</div></div>
         <span class="qty"><button data-act="carro" data-i="${i}" data-d="-1" aria-label="Quitar uno"><svg><use href="#i-minus"/></svg></button><span>${k.cant}</span><button data-act="carro" data-i="${i}" data-d="1" aria-label="Agregar uno"><svg><use href="#i-plus"/></svg></button></span></div>`).join('')
@@ -1142,8 +1161,8 @@ function vAjustes() {
   <div class="grid2">
     <div class="plate pad stack"><h2>Club</h2>
       <label class="f">Nombre del club<input class="inp" id="aNom" value="${esc(S.club.nombre)}"></label>
-      <div class="row"><label class="f" style="flex:1">Abre<input class="inp" id="aAbre" type="time" value="${S.club.apertura}"></label>
-        <label class="f" style="flex:1">Cierra<input class="inp" id="aCierra" type="time" value="${S.club.cierre}"></label>
+      <div class="row"><label class="f" style="flex:1">Abre<input class="inp" id="aAbre" type="time" step="1800" value="${esc(S.club.apertura)}"></label>
+        <label class="f" style="flex:1">Cierra<input class="inp" id="aCierra" type="time" step="1800" value="${esc(S.club.cierre)}"></label>
         <label class="f" style="flex:1">Duración sugerida al reservar<select class="inp" id="aDur">${[60, 90, 120].map(m => `<option value="${m}" ${+S.club.duracion === m ? 'selected' : ''}>${fmtDur(m)}</option>`).join('')}</select></label></div>
       <div class="muted" style="font-size:13px">Se alquila por hora: la grilla va de media hora en media hora y cada reserva puede durar lo que quieran.</div>
       <button class="btn btn-ink" data-act="guardarClub">Guardar</button>
@@ -1171,6 +1190,8 @@ Object.assign(ACT, {
   guardarClub: () => {
     const n = $('#aNom').value.trim() || 'Club de Pádel', ab = $('#aAbre').value, ci = $('#aCierra').value, du = +$('#aDur').value;
     if (!ab || !ci) { toast('Completá los horarios'); return; }
+    if (toMin(ab) % 30 || toMin(ci) % 30) { toast('Usá horas en punto o y media (ej.: 08:00, 23:30)'); return; }
+    if (ab === ci) { toast('La hora de cierre tiene que ser distinta a la de apertura'); return; }
     DB.commit(S => { Object.assign(S.club, { nombre: n, apertura: ab, cierre: ci, duracion: du }); }, 'Ajustes del club', `${n} · ${ab}–${ci} · ${du} min`); toast('Guardado');
   },
   nuevaCancha: async () => { const f = await formCancha(null); if (!f || !f.n) return; const n = f.n, p = f.p; DB.commit(S => { S.canchas.push({ id: uid(), nombre: n, precio: p, techada: f.t, bloqueo: '' }); }, 'Cancha agregada', n); },
@@ -1236,7 +1257,7 @@ let sb = null;
 const ERRORES = {
   CAJA_CERRADA: 'Abrí la caja para poder cobrar', SIN_STOCK: 'No hay stock suficiente', RESERVA_CERRADA: 'Esa reserva ya está cerrada',
   MONTO_INVALIDO: 'El monto no es válido', TIENE_PAGOS: 'Tiene pagos registrados: no se puede cancelar', ALQUILER_SOLO_CANCHA: 'El alquiler se carga a la cuenta de una cancha',
-  PEDIDO_VACIO: 'El pedido está vacío', HORARIO_OCUPADO: 'El horario siguiente ya está ocupado', FUERA_DE_HORARIO: 'Se pasa del horario de cierre del club', DEMASIADOS_INTENTOS: 'Demasiados intentos. Esperá una hora e intentá de nuevo.', PRODUCTO_NO_EXISTE: 'Ese producto ya no existe', CANCHA_CON_RESERVAS: 'Esa cancha tiene reservas pendientes. Cancelalas o movelas antes de borrarla.'
+  PEDIDO_VACIO: 'El pedido está vacío', HORARIO_OCUPADO: 'El horario siguiente ya está ocupado', FUERA_DE_HORARIO: 'Se pasa del horario de cierre del club', DEMASIADOS_INTENTOS: 'Demasiados intentos. Esperá una hora e intentá de nuevo.', PRODUCTO_NO_EXISTE: 'Ese producto ya no existe', CANCHA_CON_RESERVAS: 'Esa cancha tiene reservas pendientes. Cancelalas o movelas antes de borrarla.', CANTIDAD_INVALIDA: 'La cantidad tiene que ser 1 o más', METODO_INVALIDO: 'Elegí la forma de pago', CANCHA_NO_EXISTE: 'Esa cancha ya no existe', YA_PAGADO: 'No se puede quitar: esa parte ya está cobrada', PIN_ADMIN: 'PIN de administrador incorrecto', SIN_ADMIN: 'Tiene que quedar al menos un administrador activo', YA_HAY_ADMIN: 'El club ya tiene administrador', NO_AUTORIZADO: 'Este dispositivo no tiene permiso', FALTA_NOMBRE: 'Poné el nombre'
 };
 function msgError(e) {
   const m = String((e && (e.message || e.details)) || e || '');
@@ -1247,6 +1268,8 @@ function msgError(e) {
   return navigator.onLine ? 'No se pudo guardar. ' + m.slice(0, 90) : 'Sin conexión: revisá internet e intentá de nuevo';
 }
 async function q(p) { const { data, error } = await p; if (error) throw error; return data; }
+// Supabase entrega de a 1000 filas: pide página por página hasta traer todo
+async function todo(armar, n = 1000) { let out = [], i = 0; for (;;) { const r = await q(armar().range(i, i + n - 1)); out = out.concat(r); if (r.length < n) return out; i += n; } }
 const ms = v => v ? Date.parse(v) : null;
 
 const nube = {
@@ -1305,12 +1328,12 @@ const nube = {
   mapReserva(r) {
     return { id: r.id, fecha: r.fecha, canchaId: r.cancha_id, ini: r.ini, dur: r.dur || 60, cliente: r.cliente, tel: r.tel, jugadores: r.jugadores, precio: r.precio,
       estado: r.estado, motivo: r.motivo, creado: ms(r.creado),
-      consumos: (r.consumos || []).map(c => ({ prodId: c.producto_id, nombre: c.nombre, precio: c.precio, costo: c.costo, cant: c.cant, tipo: c.tipo })),
+      consumos: (r.consumos || []).slice().sort((a, b) => a.nombre.localeCompare(b.nombre) || String(a.id).localeCompare(String(b.id))).map(c => ({ prodId: c.producto_id, nombre: c.nombre, precio: c.precio, costo: c.costo, cant: c.cant, tipo: c.tipo })),
       pagos: (r.pagos || []).sort((a, b) => ms(a.ts) - ms(b.ts)).map(p => ({ ts: ms(p.ts), monto: p.monto, metodo: p.metodo, op: p.operador, parte: p.parte })) };
   },
   async cargarReservas(desde = this.desde, hasta = this.hasta, reemplazar = true) {
-    const r = await q(sb.from('reservas').select('*, consumos(*), pagos:caja_movs(ts,monto,metodo,operador,parte)')
-      .eq('club_id', this.C).gte('fecha', desde).lte('fecha', hasta).neq('estado', 'cancelada'));
+    const r = await todo(() => sb.from('reservas').select('*, consumos(*), pagos:caja_movs(ts,monto,metodo,operador,parte)')
+      .eq('club_id', this.C).gte('fecha', desde).lte('fecha', hasta).neq('estado', 'cancelada').order('fecha').order('ini').order('id'));
     const nuevo = reemplazar ? {} : { ...this.S.reservas };
     if (!reemplazar) for (const [k, v] of Object.entries(nuevo)) if (v.fecha >= desde && v.fecha <= hasta) delete nuevo[k];
     if (reemplazar) for (const [k, v] of Object.entries(this.S.reservas)) if (v.fecha < this.desde || v.fecha > this.hasta) nuevo[k] = v;
@@ -1324,7 +1347,7 @@ const nube = {
   async cargarCaja() {
     const cajas = await q(sb.from('cajas').select('*').eq('club_id', this.C).or(`cierre.is.null,apertura.gte.${this.desde}`).order('apertura', { ascending: false }).limit(120));
     const ids = cajas.map(c => c.id);
-    const movs = ids.length ? await q(sb.from('caja_movs').select('*').in('caja_id', ids).order('ts')) : [];
+    const movs = ids.length ? await todo(() => sb.from('caja_movs').select('*').in('caja_id', ids).order('ts').order('id')) : [];
     const porCaja = {};
     for (const m of movs) (porCaja[m.caja_id] = porCaja[m.caja_id] || []).push({ ts: ms(m.ts), tipo: m.tipo, monto: m.monto, metodo: m.metodo, ref: m.ref, op: m.operador, items: m.items || undefined });
     const map = c => ({ id: c.id, apertura: ms(c.apertura), op: c.operador, inicial: c.inicial, movs: porCaja[c.id] || [],
@@ -1353,8 +1376,8 @@ const nube = {
     on('cajas', () => this.cargarCaja());
     on('productos', () => this.cargarProductos());
     on('canchas', () => this.cargarCanchas());
-    on('historial', () => this.cargarHistorial());
-    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'clubs', filter: 'id=eq.' + this.C }, () => prog('clubs', () => this.cargarClub()));
+    on('historial', () => Promise.all([this.cargarHistorial(), this.cargarCanchas()]));
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'clubs', filter: 'id=eq.' + this.C }, () => prog('clubs', () => { this.revisarServicio(); return this.cargarClub(); }));
     ch.subscribe();
     this.canal = ch;
     const refrescar = () => { if (this.estado === 'ok') { this.revisarServicio(); this.cargarTodo().then(renderSeguro).catch(() => {}); } };
@@ -1365,9 +1388,14 @@ const nube = {
   log(accion, detalle) { if (sb && this.estado === 'ok') sb.from('historial').insert({ club_id: this.C, operador: OP ? OP.nombre : '—', accion, detalle: detalle || '' }).then(() => {}); },
 
   // ejecuta una operación, muestra el error en palabras simples y refresca lo que cambió
+  ocupado: false,
   async hacer(fn, recargar, ok) {
-    try { await fn(); if (ok) toast(ok); } catch (e) { toast(msgError(e)); }
-    try { await Promise.all((recargar || []).map(k => this['cargar' + k]())); } catch (e) {}
+    if (this.ocupado) return;
+    this.ocupado = true; document.body.classList.add('ocupado');
+    try {
+      try { await fn(); if (ok) toast(ok); } catch (e) { toast(msgError(e)); }
+      try { await Promise.all((recargar || []).map(k => this['cargar' + k]())); } catch (e) {}
+    } finally { this.ocupado = false; document.body.classList.remove('ocupado'); }
     render();
   }
 };
@@ -1375,9 +1403,10 @@ const nube = {
 // no re-dibujar mientras alguien está escribiendo; se dibuja al salir del campo
 function renderSeguro() {
   if (document.activeElement && document.activeElement.matches('input,select,textarea')) { nube.pendiente = true; return; }
-  render();
+  renderConservando();
 }
-document.addEventListener('focusout', () => setTimeout(() => { if (nube.pendiente && !document.activeElement?.matches('input,select,textarea')) { nube.pendiente = false; render(); } }, 50));
+function renderConservando() { CONSERVAR = true; try { render(); } finally { CONSERVAR = false; } }
+document.addEventListener('focusout', () => setTimeout(() => { if (nube.pendiente && !document.activeElement?.matches('input,select,textarea')) { nube.pendiente = false; renderConservando(); } }, 50));
 
 /* ---------- puerta: activación del dispositivo y primer administrador ---------- */
 let GATE_ERR = '';
@@ -1419,8 +1448,8 @@ const ACT_NUBE = {
     const nombre = $('#gAdm').value.trim(), pin = $('#gPin').value.trim();
     if (!nombre || !/^\d{4}$/.test(pin)) { GATE_ERR = 'Poné un nombre y un PIN de 4 números'; renderGate('primer_admin'); return; }
     try {
-      const r = await q(sb.from('operadores').insert({ club_id: nube.C, nombre, pin, rol: 'admin' }).select('id,nombre,rol,activo').single());
-      OP = r; try { sessionStorage.setItem('padel.op', JSON.stringify(r)); } catch (e) {}
+      const r = { ...(await q(sb.rpc('operador_primer_admin', { p_club: nube.C, p_nombre: nombre, p_pin: pin })))[0], activo: true };
+      OP = r; OP_PIN = pin; try { sessionStorage.setItem('padel.op', JSON.stringify(r)); } catch (e) {}
       GATE_ERR = ''; await nube.cargarOperadores(); nube.log('Primer administrador creado', nombre); render();
     } catch (e) { GATE_ERR = msgError(e); renderGate('primer_admin'); }
   },
@@ -1442,18 +1471,17 @@ const ACT_NUBE = {
     const ini = toMin(h.h), dur = Math.min(60, libreHasta(h.fecha, h.c, ini) - ini);
     nube.hacer(async () => { await q(sb.from('reservas').insert({ club_id: nube.C, cancha_id: h.c, fecha: h.fecha, ini: h.h, dur, cliente: motivo || 'Bloqueado', estado: 'bloqueo', precio: 0, operador: OPN() })); nube.log('Horario bloqueado', `${h.fecha} ${h.h} · ${motivo}`); }, ['Reservas']);
   },
-  desbloquearSlot: d => nube.hacer(async () => { await q(sb.from('reservas').delete().eq('id', d.id).eq('estado', 'bloqueo')); nube.log('Horario desbloqueado', `${HOJA.fecha} ${HOJA.h}`); }, ['Reservas']),
+  desbloquearSlot: d => nube.hacer(async () => { await q(sb.from('reservas').update({ estado: 'cancelada', motivo: 'Desbloqueado' }).eq('id', d.id).eq('estado', 'bloqueo')); nube.log('Horario desbloqueado', `${HOJA.fecha} ${HOJA.h}`); }, ['Reservas']),
   extender: d => {
     const r = DB.S.reservas[d.id], m = +d.m, c = DB.S.canchas.find(x => x.id === r.canchaId);
     nube.hacer(() => q(sb.rpc('reserva_extender', { p_club: nube.C, p_reserva: d.id, p_min: m, p_op: OPN() })), ['Reservas'], `Se sumaron ${fmtDur(m)}: ${gs(precioPor(c, m))}`);
   },
   addConsumo: d => nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: 1, p_op: OPN() })), ['Reservas', 'Productos']),
   consumo: d => {
-    const k = DB.S.reservas[d.id].consumos[+d.i];
-    nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: k.prodId, p_delta: +d.d, p_op: OPN() })), ['Reservas', 'Productos']);
+    nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: +d.d, p_op: OPN() })), ['Reservas', 'Productos']);
   },
   cobrar: d => {
-    const monto = +d.monto; if (!(monto > 0)) return;
+    const monto = +d.monto; if (!(monto > 0) && !d.cerrar) return;
     nube.hacer(() => q(sb.rpc('reserva_cobrar', { p_club: nube.C, p_reserva: d.id, p_monto: monto, p_metodo: METODO, p_op: OPN(), p_parte: !!d.parte })),
       ['Reservas', 'Caja', 'Productos'], 'Cobrado ' + gs(monto));
   },
@@ -1465,7 +1493,7 @@ const ACT_NUBE = {
   },
   cancelarRes: async d => {
     const r = DB.S.reservas[d.id];
-    if (pagado(r) > 0) { toast('Tiene pagos registrados: no se puede cancelar'); return; }
+    if (pagado(r) > 0) { toast('Tiene pagos registrados: no se puede cancelar. Si ya está todo pago, cerrá la cuenta.'); return; }
     const f = await pedir('Cancelar reserva', [{ id: 'm', label: '¿Por qué se cancela? (queda en el historial)', valor: 'Avisó que no viene' }], { boton: 'Cancelar reserva', peligro: true }); if (!f) return; const motivo = f.m;
     cerrarHoja();
     nube.hacer(() => q(sb.rpc('reserva_cancelar', { p_club: nube.C, p_reserva: d.id, p_motivo: motivo, p_op: OPN() })), ['Reservas', 'Productos'], 'Reserva cancelada');
@@ -1515,6 +1543,8 @@ const ACT_NUBE = {
   guardarClub: () => {
     const n = $('#aNom').value.trim() || DB.S.club.nombre, ab = $('#aAbre').value, ci = $('#aCierra').value, du = +$('#aDur').value;
     if (!ab || !ci) { toast('Completá los horarios'); return; }
+    if (toMin(ab) % 30 || toMin(ci) % 30) { toast('Usá horas en punto o y media (ej.: 08:00, 23:30)'); return; }
+    if (ab === ci) { toast('La hora de cierre tiene que ser distinta a la de apertura'); return; }
     nube.hacer(async () => { await q(sb.from('clubs').update({ nombre: n, apertura: ab, cierre: ci, duracion: du }).eq('id', nube.C)); nube.log('Ajustes del club', `${n} · ${ab}–${ci} · ${du} min`); }, ['Club'], 'Guardado');
   },
   nuevaCancha: async () => {
@@ -1546,10 +1576,12 @@ const ACT_NUBE = {
     const admins = DB.S.operadores.filter(o => o.rol === 'admin' && o.activo && o.id !== d.id).length;
     if (!admins && (rol !== 'admin' || !activo)) { toast('Tiene que quedar al menos un administrador activo'); return; }
     try { if (pin && !(await q(sb.rpc('pin_libre', { p_club: nube.C, p_pin: pin, p_excepto: d.id || null })))) { toast('Ese PIN ya lo usa otra persona'); return; } } catch (e) { toast(msgError(e)); return; }
-    const datos = { nombre, rol, activo }; if (pin) datos.pin = pin;
+    let adminPin = OP_PIN;
+    if (!adminPin) { const f = await pedir('Confirmá con tu PIN', [{ id: 'p', label: 'Tu PIN de administrador' }], { boton: 'Confirmar' }); if (!f || !/^\d{4}$/.test(f.p || '')) return; adminPin = f.p; }
     cerrarHoja();
     nube.hacer(async () => {
-      if (d.id) await q(sb.from('operadores').update(datos).eq('id', d.id)); else await q(sb.from('operadores').insert({ club_id: nube.C, ...datos }).select('id').single());
+      await q(sb.rpc('operador_guardar', { p_club: nube.C, p_admin: OP.id, p_admin_pin: adminPin, p_id: d.id || null, p_nombre: nombre, p_pin: pin || null, p_rol: rol, p_activo: activo }));
+      OP_PIN = adminPin;
       nube.log(d.id ? 'Persona editada' : 'Persona agregada', `${nombre} · ${rol}`);
     }, ['Operadores'], 'Guardado');
   },
@@ -1576,7 +1608,7 @@ async function pinKeyNube(k) {
   const pin = pinBuf; pinBuf = ''; renderLock();
   try {
     const r = await q(sb.rpc('verificar_pin', { p_club: nube.C, p_operador: pinSel, p_pin: pin }));
-    if (r && r.length) { OP = { ...r[0], activo: true }; try { sessionStorage.setItem('padel.op', JSON.stringify(OP)); } catch (e) {} nube.log('Ingresó', OP.nombre); render(); return; }
+    if (r && r.length) { OP = { ...r[0], activo: true }; OP_PIN = pin; try { sessionStorage.setItem('padel.op', JSON.stringify(OP)); } catch (e) {} nube.log('Ingresó', OP.nombre); render(); return; }
   } catch (e) { toast(msgError(e)); }
   const d = $('#dots'); d.classList.remove('err'); void d.offsetWidth; d.classList.add('err');
 }
@@ -1659,7 +1691,12 @@ document.addEventListener('keydown', e => {
 });
 let tT; function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tT); tT = setTimeout(() => t.classList.remove('on'), 2600); }
 // refresca la línea de "ahora" cada minuto sin tocar formularios abiertos
-setInterval(() => { if (OP && VISTA === 'agenda' && !HOJA && !document.activeElement?.matches('input,select')) render(); }, 60000);
+let DIA = hoyKey();
+setInterval(() => {
+  const h = hoyKey();
+  if (h !== DIA) { if (FECHA === DIA) { FECHA = h; IR_AHORA = true; } DIA = h; if (DB.nube && nube.estado === 'ok') nube.asegurarFecha(FECHA); }
+  if (OP && VISTA === 'agenda' && !HOJA && !document.activeElement?.matches('input,select')) render();
+}, 60000);
 
 INICIO();
 </script>
