@@ -166,10 +166,6 @@ label.f{display:grid;gap:5px;font-size:14px;font-weight:600;color:var(--ink-2)}
 .slot.res::before{left:14px}.slot.res::after{right:14px}
 .slot.res .x{color:var(--ink-2)}
 .slot.res:hover{transform:translateY(-2px)}
-/* en juego = placa invertida */
-.slot.juego{background:var(--ink);color:var(--plate)}
-.slot.juego .x{color:#C9CBCF}
-.slot.juego::before,.slot.juego::after{background:var(--plate);box-shadow:0 0 0 2px var(--ink-2)}
 /* cobrada = sello */
 .slot.cobrada .stamp{position:absolute;right:8px;bottom:7px;transform:rotate(-8deg);border:2px solid var(--ink-2);color:var(--ink-2);border-radius:3px;
   padding:0 5px;font-family:var(--fc);font-weight:800;font-size:12px;letter-spacing:.1em;opacity:.85}
@@ -520,7 +516,7 @@ function sembrarDemo(S) {
         if (rnd() > p) { m += PASO; continue; }
         const dur = Math.min([60, 60, 90, 120][Math.floor(rnd() * 4)], lim.c - m);
         const pasado = d < 0 || (d === 0 && m + dur <= now);
-        if (d === 0 && m < now && m + dur > now) { m += dur; continue; } // lo que está en juego hoy se pone abajo
+        if (d === 0 && m < now && m + dur > now) { m += dur; continue; } // el turno de ahora se pone abajo
         const consumos = [];
         if (pasado) for (const pr of S.productos) {
           const prob = pr.cat === 'Bebidas' ? .35 : pr.tipo === 'alquiler' ? .15 : .08;
@@ -533,10 +529,10 @@ function sembrarDemo(S) {
       }
     }
   }
-  // hoy: un partido en juego, un horario bloqueado y un turno terminado sin cobrar, para ver todos los estados
+  // hoy: un turno en curso, un horario bloqueado y un turno terminado sin cobrar, para ver todos los estados
   const libreEn = (c, ini, dur) => !reservasDemo(S, hoy, c.id).some(r => ini < toMin(r.ini) + r.dur && toMin(r.ini) < ini + dur);
   const enJuego = Math.floor(now / PASO) * PASO;
-  if (enJuego >= lim.a && enJuego + 60 <= lim.c && libreEn(S.canchas[2], enJuego, 60)) poner(hoy, S.canchas[2], enJuego, 60, { cliente: 'Villalba x4', precio: precioPor(S.canchas[2], 60), estado: 'enjuego' });
+  if (enJuego >= lim.a && enJuego + 60 <= lim.c && libreEn(S.canchas[2], enJuego, 60)) poner(hoy, S.canchas[2], enJuego, 60, { cliente: 'Villalba x4', precio: precioPor(S.canchas[2], 60), estado: 'reservada' });
   for (let m = Math.max(lim.a, Math.ceil((now + 60) / 60) * 60); m + 60 <= lim.c; m += 60) if (libreEn(S.canchas[3], m, 60)) { poner(hoy, S.canchas[3], m, 60, { cliente: 'Mantenimiento', precio: 0, estado: 'bloqueo' }); break; }
   for (let m = Math.floor((now - 60) / 60) * 60; m >= lim.a; m -= 60) if (m + 60 <= now && libreEn(S.canchas[0], m, 60)) { poner(hoy, S.canchas[0], m, 60, { cliente: 'Rojas x4', precio: precioPor(S.canchas[0], 60), estado: 'reservada' }); break; }
   S.historial.unshift({ ts: Date.now(), op: 'Sistema', accion: 'Datos de demostración cargados', detalle: '' });
@@ -661,9 +657,9 @@ function vAgenda() {
       else if (r && r.estado === 'bloqueo') { cls = 'bloq'; n = hy(r.cliente || 'Bloqueado'); }
       else if (r) {
         const cons = (r.consumos || []).reduce((a, k) => a + k.cant, 0);
-        cls = 'res' + (r.estado === 'enjuego' ? ' juego' : '') + (r.estado === 'cobrada' ? ' cobrada' : '');
+        cls = 'res' + (r.estado === 'cobrada' ? ' cobrada' : '');
         n = hy(r.cliente);
-        x = `<span class="xr">${rango(r)}</span>` + (r.estado === 'cobrada' ? '' : (r.estado === 'enjuego' ? ' · EN JUEGO<span class="xs"> · </span>' : '<span class="xs"> · </span>') + `<span class="xs">${cons ? `${cons} consumo${cons > 1 ? 's' : ''} · ` : ''}${gs(totalReserva(r) - pagado(r))}</span>`);
+        x = `<span class="xr">${rango(r)}</span>` + (r.estado === 'cobrada' ? '' : '<span class="xs"> · </span>' + `<span class="xs">${cons ? `${cons} consumo${cons > 1 ? 's' : ''} · ` : ''}${gs(totalReserva(r) - pagado(r))}</span>`);
         if (r.estado === 'cobrada') extra = '<span class="stamp">COBRADO</span>';
         else if (finDe(r) <= now && (esHoy || diaPasado) || diaPasado) extra = '<span class="stamp debe">DEBE</span>';
         if (r.id === NUEVA) cls += ' drop';
@@ -699,7 +695,7 @@ function vAgenda() {
           <button class="iconbtn" data-act="dia" data-d="1" aria-label="Día siguiente"><svg><use href="#i-next"/></svg></button>
         </div>
       </div>
-      ${S.canchas.length ? `<div class="board-wrap"><div class="board" style="grid-template-columns:var(--tc) repeat(${cols},minmax(var(--cw),1fr));grid-template-rows:var(--bh) ${slots.map(s => pasadaFila(s) ? 'var(--rowp)' : 'var(--row)').join(' ')}">${cells}${nowline}</div></div><div class="muted" style="font-size:14px;margin-top:10px">Tocá un horario libre para reservar por hora. Tocá una reserva para empezar el partido, sumar tiempo, cargar consumos o cobrar.</div>`
+      ${S.canchas.length ? `<div class="board-wrap"><div class="board" style="grid-template-columns:var(--tc) repeat(${cols},minmax(var(--cw),1fr));grid-template-rows:var(--bh) ${slots.map(s => pasadaFila(s) ? 'var(--rowp)' : 'var(--row)').join(' ')}">${cells}${nowline}</div></div><div class="muted" style="font-size:14px;margin-top:10px">Tocá un horario libre para reservar por hora. Tocá una reserva para sumar tiempo, cargar consumos o cobrar.</div>`
         : `<div class="plate empty"><b>Todavía no hay canchas</b>${esAdmin() ? 'Agregalas con el botón “Agregar cancha” o desde Ajustes → Canchas.' : 'Pedile al administrador que las cargue.'}</div>`}
     </section>
     <aside class="rail">
@@ -723,7 +719,7 @@ function vAgenda() {
       </div>
       <div class="leyenda" aria-label="Referencias">
         <div><span class="sw l"></span>Libre</div><div><span class="sw r"></span>Reservada</div>
-        <div><span class="sw j"></span>En juego</div><div><span class="sw b"></span>Bloqueada</div>
+<div><span class="sw b"></span>Bloqueada</div>
       </div>
     </aside>
   </div>`;
@@ -773,8 +769,7 @@ function renderHoja() {
     body = `
       <div class="spread"><div><div style="font-family:var(--fc);font-weight:800;font-size:26px">${esc(r.cliente)}</div>
         <div class="muted" style="font-size:14px">${r.tel ? esc(r.tel) + ' · ' : ''}${rango(r)} · ${fmtDur(durDe(r))}</div></div>
-        <span class="pill ${r.estado === 'enjuego' ? 'ink' : ''}">${{ reservada: 'Reservada', enjuego: 'En juego', cobrada: 'Cobrada' }[r.estado]}</span></div>
-      ${r.estado === 'reservada' ? `<button class="btn btn-ink" data-act="empezar" data-id="${r.id}">Empezar partido</button>` : ''}
+        <span class="pill">${r.estado === 'cobrada' ? 'Cobrada' : 'Reservada'}</span></div>
       ${abierta ? `<div class="f"><span>Sumar tiempo</span><div class="row">${[30, 60].map(m => `<button class="btn btn-line" style="flex:1" data-act="extender" data-id="${r.id}" data-m="${m}" ${libre >= fin + m ? '' : 'disabled title="El horario siguiente está ocupado"'}>+${m === 30 ? '30 min' : '1 hora'} · ${miles(precioPor(c, m))}</button>`).join('')}</div>
         ${libre < fin + 30 ? `<span class="muted" style="font-weight:500">No se puede sumar: ${libre >= limites(S.club).c ? 'es el horario de cierre' : 'a las ' + toHora(fin) + ' entra otra reserva'}.</span>` : ''}</div>` : ''}
       <div>
@@ -847,7 +842,6 @@ const ACT = {
   cerrarHoja: () => cerrarHoja(),
   reservar, bloquearSlot,
   desbloquearSlot: d => DB.commit(S => { delete S.reservas[d.id]; }, 'Horario desbloqueado', `${HOJA.fecha} ${HOJA.h}`),
-  empezar: d => DB.commit(S => { S.reservas[d.id].estado = 'enjuego'; }, 'Partido empezado', resTxt(d.id)),
   metodo: d => { METODO = d.m; renderHoja(); },
   durSel: d => { const nom = $('#rCliente')?.value, tel = $('#rTel')?.value; DUR_SEL = +d.m; renderHoja(); if (nom) $('#rCliente').value = nom; if (tel) $('#rTel').value = tel; },
   partes: d => { PARTES = +d.n; renderHoja(); },
@@ -1424,7 +1418,6 @@ const ACT_NUBE = {
     const r = DB.S.reservas[d.id], m = +d.m, c = DB.S.canchas.find(x => x.id === r.canchaId);
     nube.hacer(() => q(sb.rpc('reserva_extender', { p_club: nube.C, p_reserva: d.id, p_min: m, p_op: OPN() })), ['Reservas'], `Se sumaron ${fmtDur(m)}: ${gs(precioPor(c, m))}`);
   },
-  empezar: d => nube.hacer(async () => { await q(sb.from('reservas').update({ estado: 'enjuego' }).eq('id', d.id)); nube.log('Partido empezado', resTxt(d.id)); }, ['Reservas']),
   addConsumo: d => nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: 1, p_op: OPN() })), ['Reservas', 'Productos']),
   consumo: d => {
     const k = DB.S.reservas[d.id].consumos[+d.i];
