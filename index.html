@@ -304,6 +304,8 @@ label.f{display:grid;gap:5px;font-size:14px;font-weight:600;color:var(--ink-2)}
 .aviso-servicio.grave{background:#FDE2DF;color:#7A1510;border-color:#E39A92}
 body.ocupado [data-act]{pointer-events:none}
 body.ocupado{cursor:progress}
+a.btn{text-decoration:none}
+.cli-row{flex-wrap:wrap}.cli-row .grow{flex:1 1 60%;min-width:200px}.cli-row .acc{display:flex;gap:8px;margin-left:auto}
 .sug{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}.sug:empty{display:none}
 .sug button{border:1px solid var(--line,#c9c6bc);background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .sug button small{font-weight:500;opacity:.7;margin-left:6px}
@@ -699,9 +701,9 @@ function vClientes() {
     <div class="spread" style="flex-wrap:wrap;gap:10px"><div><b style="font-size:20px">${L.length} persona${L.length === 1 ? '' : 's'}</b><div class="sub">${conTel} con teléfono · se arma sola con cada reserva</div></div>
       <div class="row"><button class="btn btn-line btn-sm" data-act="recargarClientes">Actualizar</button><button class="btn btn-line btn-sm" data-act="exportarClientes">Bajar lista (Excel)</button></div></div>
     <input class="inp" id="buscaCli" data-in="buscaCli" placeholder="Buscar por nombre o teléfono…" value="${esc(BUSCA_CLI)}" autocomplete="off">
-    <div class="lines">${vis.slice(0, 300).map(c => `<div class="line"><div class="grow"><b>${esc(c.nombre)}</b>
+    <div class="lines">${vis.slice(0, 300).map(c => `<div class="line cli-row"><div class="grow"><b>${esc(c.nombre)}</b>
         <div class="sub">${c.tel ? esc(c.tel) + ' · ' : 'sin teléfono · '}${c.reservas} reserva${c.reservas == 1 ? '' : 's'}${c.canceladas ? ` · ${c.canceladas} cancelada${c.canceladas == 1 ? '' : 's'}` : ''} · última ${fCorta(c.ultima)}${c.proxima ? ` · próxima ${fCorta(c.proxima)}` : ''} · ${gs(c.gastado)}</div></div>
-        ${c.tel ? `<a class="btn btn-line btn-sm" href="${waDe(c.tel)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn btn-line btn-sm" href="tel:${esc(telKey(c.tel))}">Llamar</a>` : ''}</div>`).join('') || `<div class="muted">${L.length ? 'Nadie coincide con la búsqueda.' : 'Todavía no hay reservas. Cada persona que reserve aparece acá.'}</div>`}</div>
+        ${c.tel ? `<div class="acc"><a class="btn btn-line btn-sm" href="${waDe(c.tel)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn btn-line btn-sm" href="tel:${esc(telKey(c.tel))}">Llamar</a></div>` : ''}</div>`).join('') || `<div class="muted">${L.length ? 'Nadie coincide con la búsqueda.' : 'Todavía no hay reservas. Cada persona que reserve aparece acá.'}</div>`}</div>
     ${vis.length > 300 ? `<div class="muted">Se muestran 300 de ${vis.length}. Usá el buscador.</div>` : ''}
   </div>`;
 }
