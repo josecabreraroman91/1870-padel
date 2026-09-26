@@ -300,6 +300,8 @@ label.f{display:grid;gap:5px;font-size:14px;font-weight:600;color:var(--ink-2)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:60;background:var(--ink);color:var(--plate);padding:12px 18px;border-radius:var(--r);
   font-weight:600;box-shadow:0 8px 24px -6px rgba(0,0,0,.5);transition:opacity .2s,transform .25s var(--ease);max-width:calc(100% - 32px)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+.aviso-servicio{margin:0 0 12px;padding:10px 14px;border-radius:var(--r);background:#FFF4D6;color:#5A3B00;border:1px solid #E9C46A;font-size:15px;font-weight:600}
+.aviso-servicio.grave{background:#FDE2DF;color:#7A1510;border-color:#E39A92}
 .demo-flag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--plate-2);padding:3px 8px;border-radius:3px}
 .empty{padding:26px 18px;text-align:center;color:var(--ink-3)}
 .empty b{display:block;color:var(--ink);font-family:var(--fc);font-size:20px;margin-bottom:4px}
@@ -420,7 +422,7 @@ label.f{display:grid;gap:5px;font-size:14px;font-weight:600;color:var(--ink-2)}
    Datos: capa DB local (localStorage + sincronización en vivo
    entre pestañas). Preparada para pasar a Firebase RTDB.
    ========================================================= */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const KEY = 'padel.club.v2';
 const METODOS = [['efectivo','Efectivo'],['transferencia','Transferencia'],['tarjeta','Tarjeta']];
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -605,6 +607,14 @@ const VISTAS = [
   ['agenda', 'Agenda', 'i-agenda', false], ['cantina', 'Cantina', 'i-cantina', false], ['caja', 'Caja', 'i-caja', false],
   ['resumen', 'Resumen', 'i-resumen', true], ['ajustes', 'Ajustes', 'i-ajustes', true]
 ];
+function avisoServicio() {
+  const v = DB.nube && nube.servicio; if (!v || v.dias == null) return '';
+  const fecha = fmtFechaCorta(v.vence);
+  if (v.dias < 0) return `<div class="aviso-servicio grave" role="status">El servicio venció el ${fecha}. Se suspende en ${Math.max(0, v.gracia + v.dias)} día${v.gracia + v.dias === 1 ? '' : 's'} si no se renueva.</div>`;
+  if (v.dias <= 5) return `<div class="aviso-servicio" role="status">El servicio vence ${v.dias === 0 ? 'hoy' : v.dias === 1 ? 'mañana' : 'el ' + fecha}. Recordá renovarlo con OrbePy.</div>`;
+  return '';
+}
+const fmtFechaCorta = f => { const [a, m, d] = String(f).split('-'); return `${d}/${m}/${a}`; };
 function render() {
   document.querySelectorAll('.js-club').forEach(e => e.textContent = DB.S.club.nombre); document.title = DB.S.club.nombre + ' · Gestión ' + VERSION;
   if (DB.nube && nube.estado !== 'ok') { OP = null; $('#app').classList.add('hidden'); $('#lock').classList.remove('hidden'); renderGate(); cerrarHoja(true); return; }
@@ -619,7 +629,7 @@ function render() {
   $('#whoName').textContent = OP.nombre;
   const f = { agenda: vAgenda, cantina: vCantina, caja: vCaja, resumen: vResumen, ajustes: vAjustes }[VISTA];
   const prev = document.querySelector('.board-wrap'), sl = prev?.scrollLeft || 0, st = prev?.scrollTop || 0;
-  $('#main').innerHTML = f();
+  $('#main').innerHTML = avisoServicio() + f();
   const bw = document.querySelector('.board-wrap');
   if (bw) {
     if (IR_AHORA) {
@@ -1246,9 +1256,22 @@ const nube = {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { const r = await sb.auth.signInAnonymously(); if (r.error) throw r.error; }
       this.estado = await q(sb.rpc('mi_acceso', { p_club: this.C }));
-      if (this.estado === 'ok') { await this.cargarTodo(); this.escuchar(); restaurarSesion(); }
+      if (this.estado === 'ok') { await this.cargarTodo(); this.escuchar(); restaurarSesion(); this.revisarServicio(); }
     } catch (e) { this.estado = 'error'; this.err = msgError(e); }
     render();
+  },
+
+  // el proveedor (Orbe) puede suspender o vencer el servicio: se revisa al volver a la pantalla y cada 20 min
+  servicio: null,
+  async revisarServicio() {
+    try {
+      const est = await q(sb.rpc('mi_acceso', { p_club: this.C }));
+      if (est !== 'ok') { this.estado = est; render(); return; }
+      const antes = JSON.stringify(this.servicio);
+      this.servicio = await q(sb.rpc('mi_servicio', { p_club: this.C }));
+      if (JSON.stringify(this.servicio) !== antes) renderSeguro();
+    } catch (e) {}
+    if (!this.timerServ) this.timerServ = setInterval(() => this.revisarServicio(), 20 * 60 * 1000);
   },
 
   async cargarTodo() {
@@ -1328,7 +1351,7 @@ const nube = {
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'clubs', filter: 'id=eq.' + this.C }, () => prog('clubs', () => this.cargarClub()));
     ch.subscribe();
     this.canal = ch;
-    const refrescar = () => { if (this.estado === 'ok') this.cargarTodo().then(renderSeguro).catch(() => {}); };
+    const refrescar = () => { if (this.estado === 'ok') { this.revisarServicio(); this.cargarTodo().then(renderSeguro).catch(() => {}); } };
     window.addEventListener('online', refrescar);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescar(); });
   },
@@ -1357,7 +1380,7 @@ function renderGate(modo) {
   $('#lock').classList.add('en-gate'); g.classList.remove('hidden');
   if (est === 'cargando') g.innerHTML = `<p style="text-align:center">Conectando con el club…</p>`;
   else if (est === 'error') g.innerHTML = `<p style="text-align:center">${esc(nube.err || 'No se pudo conectar.')}</p><button class="btn" data-act="reintentar">Reintentar</button>`;
-  else if (est === 'suspendido') g.innerHTML = `<p style="text-align:center">El servicio de este club está suspendido. Comunicate con soporte para reactivarlo.</p>`;
+  else if (est === 'suspendido') g.innerHTML = `<p style="text-align:center"><b style="color:var(--on-panel)">El servicio está suspendido.</b><br>Los datos del club están guardados. Comunicate con OrbePy para reactivarlo.</p><button class="btn" data-act="reintentar">Volver a intentar</button>`;
   else if (est === 'sin_club') g.innerHTML = `<p style="text-align:center">Este club no existe en el sistema. Revisá la dirección.</p>`;
   else if (est === 'no_activado') g.innerHTML = `
     <p><b style="color:var(--on-panel)">Activá este dispositivo.</b> Es una sola vez: pedile el código del club al administrador.</p>
