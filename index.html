@@ -304,6 +304,9 @@ label.f{display:grid;gap:5px;font-size:14px;font-weight:600;color:var(--ink-2)}
 .aviso-servicio.grave{background:#FDE2DF;color:#7A1510;border-color:#E39A92}
 body.ocupado [data-act]{pointer-events:none}
 body.ocupado{cursor:progress}
+.sug{display:flex;flex-wrap:wrap;gap:6px;margin-top:-4px}.sug:empty{display:none}
+.sug button{border:1px solid var(--line,#c9c6bc);background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.sug button small{font-weight:500;opacity:.7;margin-left:6px}
 .demo-flag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--plate-2);padding:3px 8px;border-radius:3px}
 .empty{padding:26px 18px;text-align:center;color:var(--ink-3)}
 .empty b{display:block;color:var(--ink);font-family:var(--fc);font-size:20px;margin-bottom:4px}
@@ -375,6 +378,7 @@ body.ocupado{cursor:progress}
     <symbol id="i-caja" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="18" height="10" rx="1.5"/><path d="M6 10V5.5A1.5 1.5 0 0 1 7.5 4h9A1.5 1.5 0 0 1 18 5.5V10M9 7h6M7 14h2M11 14h2M15 14h2M9 17.5h6"/></g></symbol>
     <symbol id="i-resumen" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6.5 20V13M11 20V8M15.5 20v-5M20 20V5"/></g></symbol>
     <symbol id="i-ajustes" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></g></symbol>
+    <symbol id="i-clientes" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .8 3.2 2.5 3.5 5.2"/></g></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="1.8"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></g></symbol>
     <symbol id="i-prev" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-next" viewBox="0 0 24 24"><path d="M9.5 5.5 16 12l-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -582,10 +586,19 @@ function tramosLibres(fk, c) {
 }
 
 /* ---------- sesión (PIN) ---------- */
-let OP = null, OP_PIN = '', NUEVA = null, IR_AHORA = true;
+let OP = null, OP_TOK = '', NUEVA = null, IR_AHORA = true;
 let VISTA = 'agenda', FECHA = hoyKey(), HOJA = null;
 function esAdmin() { return OP && OP.rol === 'admin'; }
-function restaurarSesion() { try { let id = sessionStorage.getItem('padel.op') || ''; if (id.startsWith('{')) id = JSON.parse(id).id; OP = DB.S.operadores.find(o => o.id === id && o.activo) || null; if (DB.nube && OP && OP.rol === 'admin') OP = null; } catch (e) { OP = null; } }
+function guardarSesion(o, tok) { OP = o; OP_TOK = tok || ''; try { sessionStorage.setItem('padel.op', JSON.stringify({ ...o, token: OP_TOK })); } catch (e) {} }
+function olvidarSesion() { OP = null; OP_TOK = ''; try { sessionStorage.removeItem('padel.op'); } catch (e) {} }
+function restaurarSesion() {
+  try {
+    let g = sessionStorage.getItem('padel.op') || ''; let id = g, tok = '';
+    if (g.startsWith('{')) { const j = JSON.parse(g); id = j.id; tok = j.token || ''; }
+    OP = DB.S.operadores.find(o => o.id === id && o.activo) || null; OP_TOK = tok;
+    if (DB.nube && OP && !OP_TOK) OP = null; // en la nube sin sesión válida no se entra
+  } catch (e) { OP = null; OP_TOK = ''; }
+}
 
 let pinSel = null, pinBuf = '';
 function renderLock() {
@@ -611,7 +624,7 @@ function pinKey(k) {
 /* ---------- render general ---------- */
 const VISTAS = [
   ['agenda', 'Agenda', 'i-agenda', false], ['cantina', 'Cantina', 'i-cantina', false], ['caja', 'Caja', 'i-caja', false],
-  ['resumen', 'Resumen', 'i-resumen', true], ['ajustes', 'Ajustes', 'i-ajustes', true]
+  ['resumen', 'Resumen', 'i-resumen', true], ['clientes', 'Clientes', 'i-clientes', true], ['ajustes', 'Ajustes', 'i-ajustes', true]
 ];
 function avisoServicio() {
   const v = DB.nube && nube.servicio; if (!v || v.dias == null) return '';
@@ -640,7 +653,7 @@ function render() {
   if (!vis.find(v => v[0] === VISTA)) VISTA = 'agenda';
   $('#nav').innerHTML = vis.map(([id, t, ic]) => `<button data-act="ir" data-v="${id}" ${id === VISTA ? 'aria-current="page"' : ''}><svg><use href="#${ic}"/></svg>${t}</button>`).join('');
   $('#whoName').textContent = OP.nombre;
-  const f = { agenda: vAgenda, cantina: vCantina, caja: vCaja, resumen: vResumen, ajustes: vAjustes }[VISTA];
+  const f = { agenda: vAgenda, cantina: vCantina, caja: vCaja, resumen: vResumen, clientes: vClientes, ajustes: vAjustes }[VISTA];
   const prev = document.querySelector('.board-wrap'), sl = prev?.scrollLeft || 0, st = prev?.scrollTop || 0;
   ponerHTML($('#main'), avisoServicio() + f());
   const bw = document.querySelector('.board-wrap');
@@ -653,6 +666,52 @@ function render() {
     } else { bw.scrollLeft = sl; bw.scrollTop = st; }
   }
   if (HOJA) renderHoja();
+}
+
+/* ---------- CLIENTES: quienes reservaron alguna vez ---------- */
+let BUSCA_CLI = '';
+const telKey = t => { let d = String(t || '').replace(/\D/g, ''); if (d.startsWith('595')) d = '0' + d.slice(3); else if (d.length === 9 && d[0] === '9') d = '0' + d; return d; };
+function contactosLocales() {
+  const g = {}, hoy = hoyKey();
+  for (const r of Object.values(DB.S.reservas)) {
+    if (r.estado === 'bloqueo') continue;
+    const k = telKey(r.tel) ? 't:' + telKey(r.tel) : 'n:' + String(r.cliente).trim().toLowerCase();
+    const c = g[k] || (g[k] = { nombre: r.cliente, tel: '', reservas: 0, canceladas: 0, primera: null, ultima: null, proxima: null, gastado: 0, _f: '' });
+    if (r.fecha >= c._f) { c.nombre = r.cliente; if (r.tel) c.tel = r.tel; c._f = r.fecha; } else if (!c.tel && r.tel) c.tel = r.tel;
+    if (r.estado === 'cancelada') { c.canceladas++; continue; }
+    c.reservas++; c.gastado += pagado(r);
+    if (!c.primera || r.fecha < c.primera) c.primera = r.fecha;
+    if (r.fecha <= hoy && (!c.ultima || r.fecha > c.ultima)) c.ultima = r.fecha;
+    if (r.fecha > hoy && (r.estado === 'reservada' || r.estado === 'enjuego') && (!c.proxima || r.fecha < c.proxima)) c.proxima = r.fecha;
+  }
+  return Object.values(g).sort((a, b) => String(b.ultima || '').localeCompare(String(a.ultima || '')) || a.nombre.localeCompare(b.nombre));
+}
+const waDe = t => { const d = telKey(t); return d ? 'https://wa.me/595' + d.replace(/^0/, '') : ''; };
+const fCorta = k => k ? k.slice(8, 10) + '/' + k.slice(5, 7) + '/' + k.slice(2, 4) : '—';
+function vClientes() {
+  let L = DB.nube ? nube.contactos : contactosLocales();
+  if (DB.nube && !L) { nube.cargarContactos().then(renderSeguro).catch(e => toast(msgError(e))); return `<div class="view-title"><h1>Clientes</h1></div><div class="plate pad muted">Cargando clientes…</div>`; }
+  const b = BUSCA_CLI.trim().toLowerCase(), bd = BUSCA_CLI.replace(/\D/g, '');
+  const vis = !b ? L : L.filter(c => String(c.nombre).toLowerCase().includes(b) || (bd.length >= 3 && telKey(c.tel).includes(bd)));
+  const conTel = L.filter(c => c.tel).length;
+  return `<div class="view-title"><h1>Clientes</h1></div>
+  <div class="plate pad stack">
+    <div class="spread" style="flex-wrap:wrap;gap:10px"><div><b style="font-size:20px">${L.length} persona${L.length === 1 ? '' : 's'}</b><div class="sub">${conTel} con teléfono · se arma sola con cada reserva</div></div>
+      <div class="row"><button class="btn btn-line btn-sm" data-act="recargarClientes">Actualizar</button><button class="btn btn-line btn-sm" data-act="exportarClientes">Bajar lista (Excel)</button></div></div>
+    <input class="inp" id="buscaCli" data-in="buscaCli" placeholder="Buscar por nombre o teléfono…" value="${esc(BUSCA_CLI)}" autocomplete="off">
+    <div class="lines">${vis.slice(0, 300).map(c => `<div class="line"><div class="grow"><b>${esc(c.nombre)}</b>
+        <div class="sub">${c.tel ? esc(c.tel) + ' · ' : 'sin teléfono · '}${c.reservas} reserva${c.reservas == 1 ? '' : 's'}${c.canceladas ? ` · ${c.canceladas} cancelada${c.canceladas == 1 ? '' : 's'}` : ''} · última ${fCorta(c.ultima)}${c.proxima ? ` · próxima ${fCorta(c.proxima)}` : ''} · ${gs(c.gastado)}</div></div>
+        ${c.tel ? `<a class="btn btn-line btn-sm" href="${waDe(c.tel)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn btn-line btn-sm" href="tel:${esc(telKey(c.tel))}">Llamar</a>` : ''}</div>`).join('') || `<div class="muted">${L.length ? 'Nadie coincide con la búsqueda.' : 'Todavía no hay reservas. Cada persona que reserve aparece acá.'}</div>`}</div>
+    ${vis.length > 300 ? `<div class="muted">Se muestran 300 de ${vis.length}. Usá el buscador.</div>` : ''}
+  </div>`;
+}
+function exportarClientes() {
+  const L = DB.nube ? (nube.contactos || []) : contactosLocales();
+  const cel = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const filas = [['Nombre', 'Teléfono', 'Reservas', 'Canceladas', 'Primera', 'Última', 'Próxima', 'Gastado (Gs.)'].map(cel).join(';')]
+    .concat(L.map(c => [c.nombre, c.tel, c.reservas, c.canceladas, c.primera, c.ultima, c.proxima, c.gastado].map(cel).join(';')));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + filas.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+  a.download = `clientes-${hoyKey()}.csv`; a.click(); nube.log('Lista de clientes bajada', L.length + ' personas');
 }
 
 /* ---------- AGENDA ---------- */
@@ -770,7 +829,8 @@ function renderHoja() {
   } else if (!r) {
     body = `
       <label class="f">Nombre de quien reserva<input class="inp" id="rCliente" placeholder="Ej.: Martínez x4" autocomplete="off"></label>
-      <label class="f">Teléfono (opcional)<input class="inp" id="rTel" inputmode="tel" placeholder="09xx xxx xxx"></label>
+      <label class="f">Teléfono (opcional)<input class="inp" id="rTel" inputmode="tel" placeholder="09xx xxx xxx" autocomplete="off"></label>
+      <div id="rSug" class="sug" aria-live="polite"></div>
       ${(() => {
         const ini = toMin(h.h), max = Math.min(libreHasta(h.fecha, c.id, ini) - ini, 360);
         const ops = []; for (let m = Math.min(60, max); m <= max; m += PASO) ops.push(m);
@@ -858,7 +918,7 @@ function ajustarStock(S, prodId, delta, tipo, detalle) { const p = S.productos.f
 function devolverAlquileres(S, r) { for (const k of r.consumos || []) if (k.tipo === 'alquiler') ajustarStock(S, k.prodId, k.cant); }
 
 const ACT = {
-  ir: d => { VISTA = d.v; if (d.v === 'agenda') IR_AHORA = true; cerrarHoja(); render(); window.scrollTo({ top: 0 }); },
+  ir: d => { VISTA = d.v; if (d.v === 'agenda') IR_AHORA = true; if (d.v === 'clientes' && DB.nube) nube.contactos = null; cerrarHoja(); render(); window.scrollTo({ top: 0 }); },
   bloquear: () => { DB.commit(() => {}, 'Salió', OP.nombre); OP = null; try { sessionStorage.removeItem('padel.op'); } catch (e) {} render(); },
   pinOp: d => { pinSel = d.id; pinBuf = ''; renderLock(); },
   pinKey: d => pinKey(d.k),
@@ -1257,7 +1317,7 @@ let sb = null;
 const ERRORES = {
   CAJA_CERRADA: 'Abrí la caja para poder cobrar', SIN_STOCK: 'No hay stock suficiente', RESERVA_CERRADA: 'Esa reserva ya está cerrada',
   MONTO_INVALIDO: 'El monto no es válido', TIENE_PAGOS: 'Tiene pagos registrados: no se puede cancelar', ALQUILER_SOLO_CANCHA: 'El alquiler se carga a la cuenta de una cancha',
-  PEDIDO_VACIO: 'El pedido está vacío', HORARIO_OCUPADO: 'El horario siguiente ya está ocupado', FUERA_DE_HORARIO: 'Se pasa del horario de cierre del club', DEMASIADOS_INTENTOS: 'Demasiados intentos. Esperá una hora e intentá de nuevo.', PRODUCTO_NO_EXISTE: 'Ese producto ya no existe', CANCHA_CON_RESERVAS: 'Esa cancha tiene reservas pendientes. Cancelalas o movelas antes de borrarla.', CANTIDAD_INVALIDA: 'La cantidad tiene que ser 1 o más', METODO_INVALIDO: 'Elegí la forma de pago', CANCHA_NO_EXISTE: 'Esa cancha ya no existe', YA_PAGADO: 'No se puede quitar: esa parte ya está cobrada', PIN_ADMIN: 'PIN de administrador incorrecto', SIN_ADMIN: 'Tiene que quedar al menos un administrador activo', YA_HAY_ADMIN: 'El club ya tiene administrador', NO_AUTORIZADO: 'Este dispositivo no tiene permiso', FALTA_NOMBRE: 'Poné el nombre'
+  PEDIDO_VACIO: 'El pedido está vacío', HORARIO_OCUPADO: 'El horario siguiente ya está ocupado', FUERA_DE_HORARIO: 'Se pasa del horario de cierre del club', DEMASIADOS_INTENTOS: 'Demasiados intentos. Esperá una hora e intentá de nuevo.', PRODUCTO_NO_EXISTE: 'Ese producto ya no existe', CANCHA_CON_RESERVAS: 'Esa cancha tiene reservas pendientes. Cancelalas o movelas antes de borrarla.', CANTIDAD_INVALIDA: 'La cantidad tiene que ser 1 o más', METODO_INVALIDO: 'Elegí la forma de pago', CANCHA_NO_EXISTE: 'Esa cancha ya no existe', YA_PAGADO: 'No se puede quitar: esa parte ya está cobrada', PIN_ADMIN: 'PIN de administrador incorrecto', SIN_ADMIN: 'Tiene que quedar al menos un administrador activo', YA_HAY_ADMIN: 'El club ya tiene administrador', NO_AUTORIZADO: 'Este dispositivo no tiene permiso', FALTA_NOMBRE: 'Poné el nombre', SESION_VENCIDA: 'Tu sesión venció: entrá de nuevo con tu PIN', SOLO_ADMIN: 'Eso lo puede hacer solo administración', CANCHA_BLOQUEADA: 'Esa cancha está bloqueada', PIN_INVALIDO: 'El PIN tiene que ser de 4 números', TIPO_INVALIDO: 'Tipo de producto no válido', ROL_INVALIDO: 'Rol no válido'
 };
 function msgError(e) {
   const m = String((e && (e.message || e.details)) || e || '');
@@ -1285,7 +1345,7 @@ const nube = {
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { const r = await sb.auth.signInAnonymously(); if (r.error) throw r.error; }
       this.estado = await q(sb.rpc('mi_acceso', { p_club: this.C }));
-      if (this.estado === 'ok') { await this.cargarTodo(); this.escuchar(); restaurarSesion(); this.revisarServicio(); }
+      if (this.estado === 'ok') { await this.cargarTodo(); this.escuchar(); restaurarSesion(); await this.validarSesion(); this.revisarServicio(); }
     } catch (e) { this.estado = 'error'; this.err = msgError(e); }
     render();
   },
@@ -1302,6 +1362,15 @@ const nube = {
     } catch (e) {}
     if (!this.timerServ) this.timerServ = setInterval(() => this.revisarServicio(), 20 * 60 * 1000);
   },
+
+  // la sesión guardada en este dispositivo tiene que seguir siendo válida en la base
+  async validarSesion() {
+    if (!OP || !OP_TOK) return;
+    try { const r = await q(sb.rpc('mi_sesion', { p_club: this.C, p_token: OP_TOK })); if (r && r.length) OP = { ...OP, ...r[0], activo: true }; else olvidarSesion(); }
+    catch (e) { if (navigator.onLine) olvidarSesion(); }
+  },
+  contactos: null,
+  async cargarContactos() { this.contactos = await q(sb.rpc('contactos', { p_club: this.C, p_token: OP_TOK })); },
 
   async cargarTodo() {
     this.desde = addDays(hoyKey(), -62); this.hasta = addDays(hoyKey(), 120);
@@ -1385,7 +1454,7 @@ const nube = {
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescar(); });
   },
 
-  log(accion, detalle) { if (sb && this.estado === 'ok') sb.from('historial').insert({ club_id: this.C, operador: OP ? OP.nombre : '—', accion, detalle: detalle || '' }).then(() => {}); },
+  log(accion, detalle) { if (sb && this.estado === 'ok' && OP_TOK) sb.rpc('registrar', { p_club: this.C, p_token: OP_TOK, p_accion: accion, p_detalle: detalle || '' }).then(() => {}); },
 
   // ejecuta una operación, muestra el error en palabras simples y refresca lo que cambió
   ocupado: false,
@@ -1393,7 +1462,7 @@ const nube = {
     if (this.ocupado) return;
     this.ocupado = true; document.body.classList.add('ocupado');
     try {
-      try { await fn(); if (ok) toast(ok); } catch (e) { toast(msgError(e)); }
+      try { await fn(); if (ok) toast(ok); } catch (e) { toast(msgError(e)); if (/SESION_VENCIDA/.test(e?.message || '')) olvidarSesion(); }
       try { await Promise.all((recargar || []).map(k => this['cargar' + k]())); } catch (e) {}
     } finally { this.ocupado = false; document.body.classList.remove('ocupado'); }
     render();
@@ -1448,9 +1517,9 @@ const ACT_NUBE = {
     const nombre = $('#gAdm').value.trim(), pin = $('#gPin').value.trim();
     if (!nombre || !/^\d{4}$/.test(pin)) { GATE_ERR = 'Poné un nombre y un PIN de 4 números'; renderGate('primer_admin'); return; }
     try {
-      const r = { ...(await q(sb.rpc('operador_primer_admin', { p_club: nube.C, p_nombre: nombre, p_pin: pin })))[0], activo: true };
-      OP = r; OP_PIN = pin; try { sessionStorage.setItem('padel.op', JSON.stringify(r)); } catch (e) {}
-      GATE_ERR = ''; await nube.cargarOperadores(); nube.log('Primer administrador creado', nombre); render();
+      const { token, ...o } = (await q(sb.rpc('operador_primer_admin', { p_club: nube.C, p_nombre: nombre, p_pin: pin })))[0];
+      guardarSesion({ ...o, activo: true }, token);
+      GATE_ERR = ''; await nube.cargarOperadores(); render();
     } catch (e) { GATE_ERR = msgError(e); renderGate('primer_admin'); }
   },
   dia: d => { FECHA = addDays(FECHA, +d.d); IR_AHORA = true; render(); nube.asegurarFecha(FECHA); },
@@ -1458,55 +1527,54 @@ const ACT_NUBE = {
     const h = HOJA, cliente = $('#rCliente').value.trim();
     if (!cliente) { toast('Escribí el nombre de quien reserva'); $('#rCliente').focus(); return; }
     const c = DB.S.canchas.find(x => x.id === h.c), dur = DUR_SEL, precio = esAdmin() ? num($('#rPrecio').value) : precioPor(c, dur);
-    const fila = { club_id: nube.C, cancha_id: h.c, fecha: h.fecha, ini: h.h, dur, cliente, tel: $('#rTel').value.trim(), precio, operador: OPN() };
+    const args = { p_club: nube.C, p_token: OP_TOK, p_cancha: h.c, p_fecha: h.fecha, p_ini: h.h, p_dur: dur, p_cliente: cliente, p_tel: $('#rTel').value.trim(), p_precio: esAdmin() ? precio : null };
     nube.hacer(async () => {
-      const r = await q(sb.from('reservas').insert(fila).select('id').single());
-      NUEVA = r.id; setTimeout(() => { NUEVA = null; }, 700);
-      nube.log('Reserva creada', `${c.nombre} ${h.fecha} ${h.h} · ${fmtDur(dur)} · ${cliente}`);
+      const id = await q(sb.rpc('reserva_crear', args));
+      NUEVA = id; setTimeout(() => { NUEVA = null; }, 700); nube.contactos = null;
     }, ['Reservas'], 'Turno reservado');
   },
   bloquearSlot: async () => {
     const f = await pedir('Bloquear horario', [{ id: 'm', label: 'Motivo', valor: 'Mantenimiento', ph: 'Mantenimiento, clase, torneo…' }], { boton: 'Bloquear' }); if (!f) return; const motivo = f.m;
     const h = HOJA;
     const ini = toMin(h.h), dur = Math.min(60, libreHasta(h.fecha, h.c, ini) - ini);
-    nube.hacer(async () => { await q(sb.from('reservas').insert({ club_id: nube.C, cancha_id: h.c, fecha: h.fecha, ini: h.h, dur, cliente: motivo || 'Bloqueado', estado: 'bloqueo', precio: 0, operador: OPN() })); nube.log('Horario bloqueado', `${h.fecha} ${h.h} · ${motivo}`); }, ['Reservas']);
+    nube.hacer(() => q(sb.rpc('reserva_bloquear', { p_club: nube.C, p_token: OP_TOK, p_cancha: h.c, p_fecha: h.fecha, p_ini: h.h, p_dur: dur, p_motivo: motivo })), ['Reservas']);
   },
-  desbloquearSlot: d => nube.hacer(async () => { await q(sb.from('reservas').update({ estado: 'cancelada', motivo: 'Desbloqueado' }).eq('id', d.id).eq('estado', 'bloqueo')); nube.log('Horario desbloqueado', `${HOJA.fecha} ${HOJA.h}`); }, ['Reservas']),
+  desbloquearSlot: d => nube.hacer(() => q(sb.rpc('reserva_desbloquear', { p_club: nube.C, p_token: OP_TOK, p_reserva: d.id })), ['Reservas']),
   extender: d => {
     const r = DB.S.reservas[d.id], m = +d.m, c = DB.S.canchas.find(x => x.id === r.canchaId);
-    nube.hacer(() => q(sb.rpc('reserva_extender', { p_club: nube.C, p_reserva: d.id, p_min: m, p_op: OPN() })), ['Reservas'], `Se sumaron ${fmtDur(m)}: ${gs(precioPor(c, m))}`);
+    nube.hacer(() => q(sb.rpc('reserva_extender', { p_club: nube.C, p_reserva: d.id, p_min: m, p_token: OP_TOK })), ['Reservas'], `Se sumaron ${fmtDur(m)}: ${gs(precioPor(c, m))}`);
   },
-  addConsumo: d => nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: 1, p_op: OPN() })), ['Reservas', 'Productos']),
+  addConsumo: d => nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: 1, p_token: OP_TOK })), ['Reservas', 'Productos']),
   consumo: d => {
-    nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: +d.d, p_op: OPN() })), ['Reservas', 'Productos']);
+    nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: +d.d, p_token: OP_TOK })), ['Reservas', 'Productos']);
   },
   cobrar: d => {
     const monto = +d.monto; if (!(monto > 0) && !d.cerrar) return;
-    nube.hacer(() => q(sb.rpc('reserva_cobrar', { p_club: nube.C, p_reserva: d.id, p_monto: monto, p_metodo: METODO, p_op: OPN(), p_parte: !!d.parte })),
+    nube.hacer(() => q(sb.rpc('reserva_cobrar', { p_club: nube.C, p_reserva: d.id, p_monto: monto, p_metodo: METODO, p_token: OP_TOK, p_parte: !!d.parte })),
       ['Reservas', 'Caja', 'Productos'], 'Cobrado ' + gs(monto));
   },
   editarRes: async d => {
     const r = DB.S.reservas[d.id];
-    const f = await pedir('Editar reserva', [{ id: 'c', label: 'Nombre de quien reserva', valor: r.cliente }, { id: 'j', label: 'Jugadores', tipo: 'num', valor: r.jugadores }]); if (!f) return;
-    const cliente = f.c, jug = f.j;
-    nube.hacer(async () => { await q(sb.from('reservas').update({ cliente: cliente.trim() || r.cliente, jugadores: Math.max(1, +jug || r.jugadores) }).eq('id', d.id)); nube.log('Reserva editada', resTxt(d.id)); }, ['Reservas']);
+    const f = await pedir('Editar reserva', [{ id: 'c', label: 'Nombre de quien reserva', valor: r.cliente }, { id: 't', label: 'Teléfono', valor: r.tel || '' }]); if (!f) return;
+    nube.hacer(() => q(sb.rpc('reserva_editar', { p_club: nube.C, p_token: OP_TOK, p_reserva: d.id, p_cliente: f.c, p_tel: f.t })), ['Reservas'], 'Reserva actualizada');
+    nube.contactos = null;
   },
   cancelarRes: async d => {
     const r = DB.S.reservas[d.id];
     if (pagado(r) > 0) { toast('Tiene pagos registrados: no se puede cancelar. Si ya está todo pago, cerrá la cuenta.'); return; }
     const f = await pedir('Cancelar reserva', [{ id: 'm', label: '¿Por qué se cancela? (queda en el historial)', valor: 'Avisó que no viene' }], { boton: 'Cancelar reserva', peligro: true }); if (!f) return; const motivo = f.m;
     cerrarHoja();
-    nube.hacer(() => q(sb.rpc('reserva_cancelar', { p_club: nube.C, p_reserva: d.id, p_motivo: motivo, p_op: OPN() })), ['Reservas', 'Productos'], 'Reserva cancelada');
+    nube.hacer(() => q(sb.rpc('reserva_cancelar', { p_club: nube.C, p_reserva: d.id, p_motivo: motivo, p_token: OP_TOK })), ['Reservas', 'Productos'], 'Reserva cancelada');
   },
   venderYa: () => {
     if (!CARRO.length) return;
     const items = CARRO.map(k => ({ id: k.prodId, cant: k.cant }));
-    nube.hacer(async () => { const tot = await q(sb.rpc('venta_cantina', { p_club: nube.C, p_items: items, p_metodo: METODO, p_op: OPN() })); CARRO = []; toast('Venta cobrada ' + gs(tot)); }, ['Productos', 'Caja']);
+    nube.hacer(async () => { const tot = await q(sb.rpc('venta_cantina', { p_club: nube.C, p_items: items, p_metodo: METODO, p_token: OP_TOK })); CARRO = []; toast('Venta cobrada ' + gs(tot)); }, ['Productos', 'Caja']);
   },
   cargarCancha: () => {
     const r = DB.S.reservas[DESTINO]; if (!r || !CARRO.length) return;
     const items = CARRO.map(k => ({ id: k.prodId, cant: k.cant }));
-    nube.hacer(async () => { await q(sb.rpc('pedido_a_cancha', { p_club: nube.C, p_reserva: r.id, p_items: items, p_op: OPN() })); CARRO = []; }, ['Reservas', 'Productos'], 'Cargado a ' + nombreCancha(r.canchaId));
+    nube.hacer(async () => { await q(sb.rpc('pedido_a_cancha', { p_club: nube.C, p_reserva: r.id, p_items: items, p_token: OP_TOK })); CARRO = []; }, ['Reservas', 'Productos'], 'Cargado a ' + nombreCancha(r.canchaId));
   },
   entrada: async d => {
     const p = DB.S.productos.find(x => x.id === d.p);
@@ -1514,58 +1582,56 @@ const ACT_NUBE = {
     const cant = Math.max(0, Math.round(f.n || 0)); if (!cant) { toast('Poné cuántas unidades entraron'); return; }
     let costo = null;
     if (esAdmin() && p.tipo !== 'alquiler') { costo = f.c || p.costo; }
-    nube.hacer(() => q(sb.rpc('entrada_mercaderia', { p_club: nube.C, p_producto: p.id, p_cant: cant, p_costo: costo, p_op: OPN() })), ['Productos'], `Stock de ${p.nombre}: +${cant}`);
+    nube.hacer(() => q(sb.rpc('entrada_mercaderia', { p_club: nube.C, p_producto: p.id, p_cant: cant, p_costo: costo, p_token: OP_TOK })), ['Productos'], `Stock de ${p.nombre}: +${cant}`);
   },
   guardarProd: d => {
     const nombre = $('#pNom').value.trim(); if (!nombre) { toast('Poné el nombre'); return; }
     const datos = { nombre, cat: $('#pCat').value.trim() || 'Otros', tipo: $('#pTipo').value, precio: num($('#pPre').value), costo: num($('#pCos').value), stock: Math.max(0, +$('#pSto').value || 0), minimo: Math.max(0, +$('#pMin').value || 0) };
     cerrarHoja();
-    nube.hacer(async () => {
-      if (d.id) await q(sb.from('productos').update(datos).eq('id', d.id)); else await q(sb.from('productos').insert({ club_id: nube.C, ...datos }));
-      nube.log(d.id ? 'Producto editado' : 'Producto nuevo', `${nombre} · ${gs(datos.precio)}`);
-    }, ['Productos'], 'Guardado');
+    nube.hacer(() => q(sb.rpc('producto_guardar', { p_club: nube.C, p_token: OP_TOK, p_id: d.id || null, p_nombre: datos.nombre, p_cat: datos.cat, p_tipo: datos.tipo,
+      p_precio: datos.precio, p_costo: datos.costo, p_stock: datos.stock, p_minimo: datos.minimo })), ['Productos'], 'Guardado');
   },
   borrarProd: async d => {
     const p = DB.S.productos.find(x => x.id === d.id); if (!(await confirmar(`¿Quitar “${p.nombre}” de la cantina?`, 'Quitar'))) return;
     cerrarHoja();
-    nube.hacer(async () => { await q(sb.from('productos').update({ activo: false }).eq('id', d.id)); nube.log('Producto quitado', p.nombre); }, ['Productos']);
+    nube.hacer(() => q(sb.rpc('producto_quitar', { p_club: nube.C, p_token: OP_TOK, p_id: d.id })), ['Productos']);
   },
   abrirCaja: () => {
     const ini = num($('#cIni').value);
-    nube.hacer(async () => { await q(sb.from('cajas').insert({ club_id: nube.C, operador: OPN(), inicial: ini })); nube.log('Caja abierta', gs(ini)); }, ['Caja'], 'Caja abierta');
+    nube.hacer(() => q(sb.rpc('caja_abrir', { p_club: nube.C, p_token: OP_TOK, p_inicial: ini })), ['Caja'], 'Caja abierta');
   },
   cerrarCaja: async () => {
     const c = DB.S.caja.actual; if (!$('#cCont').value) { toast('Escribí el efectivo contado'); $('#cCont').focus(); return; }
     const contado = num($('#cCont').value), ef = c.movs.filter(m => m.metodo === 'efectivo').reduce((a, m) => a + m.monto, 0), esperado = c.inicial + ef;
     if (!(await confirmar(`Esperado ${gs(esperado)} · Contado ${gs(contado)} · Diferencia ${gs(contado - esperado)}`, 'Cerrar caja', false))) return;
-    nube.hacer(() => q(sb.rpc('caja_cerrar', { p_club: nube.C, p_contado: contado, p_op: OPN() })), ['Caja'], 'Caja cerrada');
+    nube.hacer(() => q(sb.rpc('caja_cerrar', { p_club: nube.C, p_contado: contado, p_token: OP_TOK })), ['Caja'], 'Caja cerrada');
   },
   guardarClub: () => {
     const n = $('#aNom').value.trim() || DB.S.club.nombre, ab = $('#aAbre').value, ci = $('#aCierra').value, du = +$('#aDur').value;
     if (!ab || !ci) { toast('Completá los horarios'); return; }
     if (toMin(ab) % 30 || toMin(ci) % 30) { toast('Usá horas en punto o y media (ej.: 08:00, 23:30)'); return; }
     if (ab === ci) { toast('La hora de cierre tiene que ser distinta a la de apertura'); return; }
-    nube.hacer(async () => { await q(sb.from('clubs').update({ nombre: n, apertura: ab, cierre: ci, duracion: du }).eq('id', nube.C)); nube.log('Ajustes del club', `${n} · ${ab}–${ci} · ${du} min`); }, ['Club'], 'Guardado');
+    nube.hacer(() => q(sb.rpc('club_guardar', { p_club: nube.C, p_token: OP_TOK, p_nombre: n, p_apertura: ab, p_cierre: ci, p_duracion: du })), ['Club'], 'Guardado');
   },
   nuevaCancha: async () => {
     const f = await formCancha(null); if (!f || !f.n) return; const n = f.n, p = f.p;
-    nube.hacer(async () => { await q(sb.from('canchas').insert({ club_id: nube.C, nombre: n, precio: p, techada: f.t, orden: DB.S.canchas.length + 1 })); nube.log('Cancha agregada', `${n} · ${gs(p)}`); }, ['Canchas'], 'Cancha agregada');
+    nube.hacer(() => q(sb.rpc('cancha_guardar', { p_club: nube.C, p_token: OP_TOK, p_id: null, p_nombre: n, p_precio: p, p_techada: f.t })), ['Canchas'], 'Cancha agregada');
   },
   editCancha: async d => {
     const c = DB.S.canchas.find(x => x.id === d.id);
     const f = await formCancha(c); if (!f) return; const n = f.n, p = String(f.p), t = f.t;
-    nube.hacer(async () => { await q(sb.from('canchas').update({ nombre: n.trim() || c.nombre, precio: num(p) || c.precio, techada: t }).eq('id', d.id)); nube.log('Cancha editada', `${n} · ${gs(num(p))}`); }, ['Canchas']);
+    nube.hacer(() => q(sb.rpc('cancha_guardar', { p_club: nube.C, p_token: OP_TOK, p_id: d.id, p_nombre: n.trim() || c.nombre, p_precio: num(p) || c.precio, p_techada: t })), ['Canchas']);
   },
   bloqCancha: async d => {
     const c = DB.S.canchas.find(x => x.id === d.id);
     let m = '';
     if (!c.bloqueo) { const f = await pedir('Bloquear ' + c.nombre, [{ id: 'm', label: 'Motivo', valor: 'Mantenimiento', ph: 'Lluvia, mantenimiento…' }], { boton: 'Bloquear' }); if (!f || !f.m) return; m = f.m; }
-    nube.hacer(async () => { await q(sb.from('canchas').update({ bloqueo: m }).eq('id', d.id)); nube.log(m ? 'Cancha bloqueada' : 'Cancha habilitada', c.nombre + (m ? ' · ' + m : '')); }, ['Canchas']);
+    nube.hacer(() => q(sb.rpc('cancha_bloqueo', { p_club: nube.C, p_token: OP_TOK, p_id: d.id, p_motivo: m })), ['Canchas']);
   },
   borrarCancha: async d => {
     const c = DB.S.canchas.find(x => x.id === d.id);
     if (!await confirmar(`¿Borrar ${c.nombre}? Deja de aparecer en la agenda. Los cobros ya hechos quedan en la caja y el resumen.`, 'Borrar cancha')) return;
-    nube.hacer(() => q(sb.rpc('cancha_borrar', { p_club: nube.C, p_cancha: c.id, p_op: OP.nombre })), ['Canchas', 'Historial'], 'Cancha borrada');
+    nube.hacer(() => q(sb.rpc('cancha_borrar', { p_club: nube.C, p_cancha: c.id, p_token: OP_TOK })), ['Canchas', 'Historial'], 'Cancha borrada');
   },
   nuevoOp: () => editarOpNube(null), editOp: d => editarOpNube(d.id),
   guardarOp: async d => {
@@ -1576,16 +1642,14 @@ const ACT_NUBE = {
     const admins = DB.S.operadores.filter(o => o.rol === 'admin' && o.activo && o.id !== d.id).length;
     if (!admins && (rol !== 'admin' || !activo)) { toast('Tiene que quedar al menos un administrador activo'); return; }
     try { if (pin && !(await q(sb.rpc('pin_libre', { p_club: nube.C, p_pin: pin, p_excepto: d.id || null })))) { toast('Ese PIN ya lo usa otra persona'); return; } } catch (e) { toast(msgError(e)); return; }
-    let adminPin = OP_PIN;
-    if (!adminPin) { const f = await pedir('Confirmá con tu PIN', [{ id: 'p', label: 'Tu PIN de administrador' }], { boton: 'Confirmar' }); if (!f || !/^\d{4}$/.test(f.p || '')) return; adminPin = f.p; }
     cerrarHoja();
-    nube.hacer(async () => {
-      await q(sb.rpc('operador_guardar', { p_club: nube.C, p_admin: OP.id, p_admin_pin: adminPin, p_id: d.id || null, p_nombre: nombre, p_pin: pin || null, p_rol: rol, p_activo: activo }));
-      OP_PIN = adminPin;
-      nube.log(d.id ? 'Persona editada' : 'Persona agregada', `${nombre} · ${rol}`);
-    }, ['Operadores'], 'Guardado');
+    nube.hacer(() => q(sb.rpc('operador_guardar', { p_club: nube.C, p_token: OP_TOK, p_id: d.id || null, p_nombre: nombre, p_pin: pin || null, p_rol: rol, p_activo: activo })), ['Operadores'], 'Guardado');
   },
-  dispActivo: d => nube.hacer(async () => { await q(sb.from('dispositivos').update({ activo: d.v === '1' }).eq('club_id', nube.C).eq('user_id', d.id)); nube.log(d.v === '1' ? 'Dispositivo reactivado' : 'Dispositivo desactivado', d.n); }, ['Dispositivos']),
+  dispActivo: d => nube.hacer(() => q(sb.rpc('dispositivo_activo', { p_club: nube.C, p_token: OP_TOK, p_user: d.id, p_activo: d.v === '1' })), ['Dispositivos']),
+  bloquear: () => { if (OP_TOK) sb.rpc('sesion_cerrar', { p_club: nube.C, p_token: OP_TOK }).then(() => {}); olvidarSesion(); cerrarHoja(); render(); },
+  usarContacto: d => { if ($('#rCliente')) $('#rCliente').value = d.n; if ($('#rTel') && d.t) $('#rTel').value = d.t; const b = $('#rSug'); if (b) b.innerHTML = ''; },
+  exportarClientes: () => exportarClientes(),
+  recargarClientes: () => { nube.contactos = null; render(); },
   borrarDemo: () => {}
 };
 function editarOpNube(id) {
@@ -1608,7 +1672,7 @@ async function pinKeyNube(k) {
   const pin = pinBuf; pinBuf = ''; renderLock();
   try {
     const r = await q(sb.rpc('verificar_pin', { p_club: nube.C, p_operador: pinSel, p_pin: pin }));
-    if (r && r.length) { OP = { ...r[0], activo: true }; OP_PIN = pin; try { sessionStorage.setItem('padel.op', JSON.stringify(OP)); } catch (e) {} nube.log('Ingresó', OP.nombre); render(); return; }
+    if (r && r.length) { const { token, ...o } = r[0]; guardarSesion({ ...o, activo: true }, token); nube.contactos = null; render(); return; }
   } catch (e) { toast(msgError(e)); }
   const d = $('#dots'); d.classList.remove('err'); void d.offsetWidth; d.classList.add('err');
 }
@@ -1678,6 +1742,21 @@ Object.assign(ACT, {
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
   const f = ACT[b.dataset.act]; if (f) { e.preventDefault(); f(b.dataset, b); }
+});
+let SUG_T;
+document.addEventListener('input', e => {
+  if (e.target.id === 'buscaCli') { BUSCA_CLI = e.target.value; clearTimeout(SUG_T); SUG_T = setTimeout(() => { const pos = e.target.selectionStart; render(); const i = $('#buscaCli'); if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (x) {} } }, 200); return; }
+  if (e.target.id !== 'rCliente' && e.target.id !== 'rTel') return;
+  const txt = e.target.value.trim(); clearTimeout(SUG_T);
+  SUG_T = setTimeout(async () => {
+    const box = $('#rSug'); if (!box) return;
+    if (txt.length < 3) { box.innerHTML = ''; return; }
+    let L = [];
+    if (DB.nube) { try { L = await q(sb.rpc('contactos_buscar', { p_club: nube.C, p_token: OP_TOK, p_q: txt })); } catch (x) { L = []; } }
+    else { const t = txt.toLowerCase(), d = txt.replace(/\D/g, ''); L = contactosLocales().filter(c => c.nombre.toLowerCase().includes(t) || (d.length >= 4 && telKey(c.tel).includes(d))).slice(0, 6); }
+    const b2 = $('#rSug'); if (!b2) return;
+    b2.innerHTML = (L || []).map(c => `<button type="button" data-act="usarContacto" data-n="${esc(c.nombre)}" data-t="${esc(c.tel || '')}">${esc(c.nombre)}${c.tel ? `<small>${esc(c.tel)}</small>` : ''}</button>`).join('');
+  }, 250);
 });
 document.addEventListener('change', e => {
   const k = e.target.dataset.in;
