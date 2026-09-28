@@ -310,6 +310,46 @@ a.btn{text-decoration:none}
 .sug button{border:1px solid var(--line,#c9c6bc);background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .sug button small{font-weight:500;opacity:.7;margin-left:6px}
 .solo-cel{display:none}
+/* dividir la cuenta y cuentas por persona */
+.stepper{display:inline-flex;align-items:center;border:1.5px solid var(--ink);border-radius:var(--r);width:max-content;background:#fff}
+.stepper button{width:46px;height:44px;border:0;background:none;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+.stepper button:disabled{opacity:.25;cursor:default}
+.stepper svg{width:18px;height:18px}
+.stepper b{min-width:120px;text-align:center;font-family:var(--fc);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.03em;border-inline:1px solid var(--plate-line);line-height:44px}
+.personas,.chips-p{display:flex;flex-wrap:wrap;gap:6px}
+.persona{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--plate-line);background:#fff;border-radius:999px;padding:7px 12px;font:inherit;font-weight:600;cursor:pointer;color:var(--ink)}
+.persona svg{width:14px;height:14px;opacity:.55}
+.chip-p{border:1.5px solid var(--ink);background:none;border-radius:999px;padding:7px 12px;font:inherit;font-weight:700;cursor:pointer;color:var(--ink)}
+.chip-p[aria-pressed=true]{background:var(--ink);color:var(--plate)}
+.tag-p{display:inline-block;font-size:12px;font-weight:700;background:var(--plate-2);border-radius:999px;padding:1px 8px;margin-left:4px;vertical-align:1px}
+.check{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer}.check input{width:22px;height:22px;accent-color:var(--ink)}
+.slot .fj{color:var(--brand);font-weight:800;text-transform:uppercase;font-size:.9em;letter-spacing:.04em}
+/* semana */
+.modo button{min-width:74px}
+.semana{--sc:120px;display:grid;gap:5px;background:var(--panel-lo);border:1.5px solid var(--brand);border-radius:8px;padding:10px}
+.semana .sh{display:flex;flex-direction:column;align-items:center;gap:0;background:none;border:0;color:var(--on-panel);font-family:var(--fc);text-transform:uppercase;cursor:pointer;padding:4px 0;border-radius:4px}
+.semana .sh span{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--on-panel-2)}
+.semana .sh b{font-size:24px;font-weight:800;line-height:1}
+.semana .sh.hoy{background:var(--now);color:var(--ink)}.semana .sh.hoy span{color:var(--ink)}
+.semana .sh.pas{opacity:.45}
+.semana .sc{display:flex;align-items:center;font-family:var(--fc);font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:.03em;color:var(--on-panel);padding-right:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.semana .sc.tot{font-size:13px;color:var(--on-panel-2)}
+.semana .st{text-align:center;font-family:var(--fc);font-weight:700;font-size:15px;color:var(--on-panel-2);padding:6px 0}
+.semana .sd{position:relative;min-height:58px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:var(--fc);cursor:pointer;overflow:hidden;border:1.5px solid var(--panel-line);background:var(--panel-lo);color:var(--on-panel)}
+.semana .sd b{font-size:18px;font-weight:800;position:relative;white-space:nowrap}
+.semana .sd{padding:0}
+.semana .sd i{position:absolute;left:0;bottom:0;height:5px;width:var(--o);background:var(--brand-hi)}
+.semana .sd.mucho{border-color:var(--brand)}
+.semana .sd.poco{background:var(--plate);color:var(--ink);border-color:transparent}
+.semana .sd.poco i{background:var(--danger)}
+.semana .sd.lleno{background:var(--ink);color:var(--plate-2);border-color:transparent}
+.semana .sd.lleno i{display:none}
+.semana .sd.pas{opacity:.35;cursor:default;font-size:18px}
+.semana .sd:not(.pas):hover{transform:translateY(-2px)}
+.leyenda-sem{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:14px;color:var(--on-panel-2)}
+.leyenda-sem span{display:flex;align-items:center;gap:8px}
+.leyenda-sem .sw{width:26px;height:16px;border-radius:3px;display:inline-block}
+.leyenda-sem .sw.mucho{border:1.5px solid var(--brand)}.leyenda-sem .sw.poco{background:var(--plate)}.leyenda-sem .sw.lleno{background:var(--ink);border:1px solid var(--panel-line)}
 .carro-bar{display:none}
 .demo-flag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--plate-2);padding:3px 8px;border-radius:3px}
 .empty{padding:26px 18px;text-align:center;color:var(--ink-3)}
@@ -390,6 +430,13 @@ a.btn{text-decoration:none}
   .bh:not(:first-child)>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 2px 2px}
   .slot .x{white-space:normal;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   .ayuda-tablero{display:none}
+  .semana{--sc:58px;gap:3px;padding:6px}
+  .semana .sc{font-size:12px;letter-spacing:0}
+  .semana .sh b{font-size:19px}.semana .sh span{font-size:11px}
+  .semana .sd{min-height:48px}.semana .sd b{font-size:13px}
+  .semana .st{font-size:11px}
+  .modo button{min-width:0;padding:0 10px}
+  .stepper b{min-width:104px;font-size:16px}
   /* cantina: el total y el botón de cobrar siempre a mano */
   .carro-bar{display:flex;align-items:center;gap:10px;position:fixed;left:10px;right:10px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:34;
     background:var(--ink);color:var(--plate);border:0;border-radius:8px;padding:12px 14px;font:inherit;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.35);text-align:left}
@@ -416,6 +463,7 @@ a.btn{text-decoration:none}
     <symbol id="i-resumen" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6.5 20V13M11 20V8M15.5 20v-5M20 20V5"/></g></symbol>
     <symbol id="i-ajustes" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></g></symbol>
     <symbol id="i-clientes" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .8 3.2 2.5 3.5 5.2"/></g></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="1.8"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></g></symbol>
     <symbol id="i-prev" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-next" viewBox="0 0 24 24"><path d="M9.5 5.5 16 12l-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -501,7 +549,7 @@ function estadoVacio() {
   return {
     club: { nombre: '1870 Pádel Club', apertura: '08:00', cierre: '00:00', duracion: 60 },
     canchas: [], productos: [], reservas: {}, operadores: [],
-    caja: { actual: null, cerradas: [] }, historial: [], demo: false, ver: 1
+    caja: { actual: null, cerradas: [] }, historial: [], fijos: [], demo: false, ver: 1
   };
 }
 const DB = (() => {
@@ -604,6 +652,22 @@ function fmtDur(m) { const h = Math.floor(m / 60), mm = m % 60; return (h ? h + 
 const rango = r => `${toHora(toMin(r.ini))}–${toHora(finDe(r))}`;
 function totalReserva(r) { return (+r.precio || 0) + (r.consumos || []).reduce((a, c) => a + c.precio * c.cant, 0); }
 function pagado(r) { return (r.pagos || []).reduce((a, p) => a + p.monto, 0); }
+// personas que dividen la cuenta de una reserva (vacío = sin dividir)
+const personasDe = r => (r.personas || []).slice().sort((a, b) => a.orden - b.orden);
+// cuánto le toca a cada persona: su parte de la cancha (y de lo pedido "para todos") + lo que pidió ella
+function cuentaPersonas(r) {
+  const P = personasDe(r); if (P.length < 2) return null;
+  const comun = (+r.precio || 0) + (r.consumos || []).filter(k => !k.persona).reduce((a, k) => a + k.precio * k.cant, 0);
+  // partes redondeadas a miles (más fácil de pagar en efectivo); la diferencia la pone el primero
+  const u = comun >= P.length * 1000 ? 1000 : 1, base = Math.floor(comun / P.length / u) * u, resto = comun - base * P.length;
+  return P.map((p, i) => {
+    const propio = (r.consumos || []).filter(k => k.persona === p.id).reduce((a, k) => a + k.precio * k.cant, 0);
+    const pago = (r.pagos || []).filter(x => x.persona === p.id).reduce((a, x) => a + x.monto, 0);
+    const c = base + (i === 0 ? resto : 0);
+    return { ...p, comun: c, propio, pago, saldo: Math.max(0, c + propio - pago) };
+  });
+}
+const fechaCortaK = k => k ? k.slice(8, 10) + '/' + k.slice(5, 7) : '';
 function proximoLibre(fk) {
   const S = DB.S, esHoy = fk === hoyKey(), now = ahoraMin();
   for (const s of slotsDe(S.club)) {
@@ -751,8 +815,51 @@ function exportarClientes() {
   a.download = `clientes-${hoyKey()}.csv`; a.click(); nube.log('Lista de clientes bajada', L.length + ' personas');
 }
 
+/* ---------- AGENDA · SEMANA: horas libres por cancha y por día ---------- */
+let MODO_AG = 'dia';
+function lunesDe(fk) { const w = (keyToDate(fk).getDay() + 6) % 7; return addDays(fk, -w); }
+const fmtHoras = h => (Math.round(h * 2) / 2).toString().replace('.', ',') + ' h';
+function modoAgenda() { return `<div class="seg seg-panel modo" role="group" aria-label="Vista">${[['dia', 'Día'], ['semana', 'Semana']].map(([k, t]) => `<button data-act="modoAg" data-m="${k}" aria-pressed="${MODO_AG === k}">${t}</button>`).join('')}</div>`; }
+function vSemana() {
+  const S = DB.S, L = lunesDe(FECHA), dias = [...Array(7)].map((_, i) => addDays(L, i)), hoy = hoyKey();
+  if (DB.nube) { nube.asegurarFecha(dias[0]).catch(() => {}); nube.asegurarFecha(dias[6]).catch(() => {}); }
+  const horasDia = slotsDe(S.club).length * PASO / 60;
+  const libres = (fk, c) => tramosLibres(fk, c).reduce((a, [i, f]) => a + f - i, 0) / 60;
+  const celda = (fk, c) => {
+    if (fk < hoy) return `<span class="sd pas" aria-label="Día pasado">—</span>`;
+    const l = c.bloqueo ? 0 : libres(fk, c), occ = Math.round(100 * (1 - l / Math.max(1, horasDia)));
+    const nivel = l === 0 ? 'lleno' : l <= horasDia * .3 ? 'poco' : 'mucho';
+    return `<button class="sd ${nivel}" data-act="irDia" data-f="${fk}" aria-label="${esc(c.nombre)}, ${diaLargo(fk)}: ${l ? fmtHoras(l) + ' libres' : 'lleno'}"><b>${l ? fmtHoras(l) : 'Lleno'}</b><i style="--o:${occ}%"></i></button>`;
+  };
+  const totalDia = fk => fk < hoy ? '—' : fmtHoras(S.canchas.reduce((a, c) => a + (c.bloqueo ? 0 : libres(fk, c)), 0));
+  const F = (S.fijos || []).filter(f => f.hasta >= hoy).sort((a, b) => a.hasta.localeCompare(b.hasta));
+  const esEsta = L === lunesDe(hoy);
+  return `
+  <div class="datebar">
+    <div class="day"><span class="solo-pc">Semana del ${keyToDate(L).getDate()} ${MESES[keyToDate(L).getMonth()].slice(0, 3)} al ${keyToDate(dias[6]).getDate()} ${MESES[keyToDate(dias[6]).getMonth()].slice(0, 3)}</span><span class="solo-cel">${keyToDate(L).getDate()}–${keyToDate(dias[6]).getDate()} ${MESES[keyToDate(dias[6]).getMonth()].slice(0, 3)}</span><small>Horas libres por cancha · tocá un día para verlo</small></div>
+    <div class="row" style="margin-left:auto">${modoAgenda()}
+      <button class="iconbtn" data-act="semanaMov" data-d="-7" aria-label="Semana anterior"><svg><use href="#i-prev"/></svg></button>
+      ${esEsta ? '' : '<button class="btn btn-sm" data-act="semanaMov" data-d="0">Hoy</button>'}
+      <button class="iconbtn" data-act="semanaMov" data-d="7" aria-label="Semana siguiente"><svg><use href="#i-next"/></svg></button></div>
+  </div>
+  ${S.canchas.length ? `<div class="semana" style="grid-template-columns:var(--sc) repeat(7,minmax(0,1fr))">
+    <span></span>${dias.map(fk => `<button class="sh${fk === hoy ? ' hoy' : ''}${fk < hoy ? ' pas' : ''}" data-act="irDia" data-f="${fk}"><span>${DIAS_C[keyToDate(fk).getDay()]}</span><b>${keyToDate(fk).getDate()}</b></button>`).join('')}
+    ${S.canchas.map(c => `<span class="sc">${esc(c.nombre)}</span>${dias.map(fk => celda(fk, c)).join('')}`).join('')}
+    <span class="sc tot">Total libre</span>${dias.map(fk => `<span class="st">${totalDia(fk)}</span>`).join('')}
+  </div>
+  <div class="leyenda-sem"><span><i class="sw mucho"></i>Bastante libre</span><span><i class="sw poco"></i>Poco lugar</span><span><i class="sw lleno"></i>Lleno</span></div>` : '<div class="plate empty"><b>Todavía no hay canchas</b></div>'}
+  <div class="plate pad stack" style="margin-top:18px">
+    <div class="spread"><h2>Turnos fijos</h2><span class="muted" style="font-size:14px">${F.length} activo${F.length === 1 ? '' : 's'}</span></div>
+    <div class="lines">${F.map(f => { const falta = Math.round((keyToDate(f.hasta) - keyToDate(hoy)) / 864e5); return `<div class="line"><div class="grow"><b>${esc(f.cliente)}</b>
+      <div class="sub">${esc(nombreCancha(f.canchaId))} · ${DIAS[keyToDate(f.desde).getDay()].toLowerCase()} ${toHora(toMin(f.ini))} · ${fmtDur(f.dur)} · hasta el ${fechaCortaK(f.hasta)}${falta <= 7 ? ' · <b style="color:var(--danger)">vence pronto</b>' : ''}</div></div>
+      <button class="btn btn-line btn-sm" data-act="fijoExt" data-id="${f.id}" data-sem="4">+4 semanas</button><button class="btn btn-danger btn-sm" data-act="fijoCortar" data-id="${f.id}" data-desde="${hoy}">Cortar</button></div>`; }).join('')
+      || '<div class="muted">No hay turnos fijos. Se crean al reservar un horario, tildando “Turno fijo”.</div>'}</div>
+  </div>`;
+}
+
 /* ---------- AGENDA ---------- */
 function vAgenda() {
+  if (MODO_AG === 'semana') return vSemana();
   const S = DB.S, slots = slotsDe(S.club), esHoy = FECHA === hoyKey(), now = ahoraMin(), diaPasado = FECHA < hoyKey();
   const cols = S.canchas.length;
   let cells = `<div class="bh" style="grid-row:1;grid-column:1"></div>` + S.canchas.map((c, j) => `<div class="bh" style="grid-row:1;grid-column:${j + 2}"><span>${esc(c.nombre)}</span><small>${gs(c.precio)} la hora${c.techada ? ' · techada' : ''}</small></div>`).join('');
@@ -778,7 +885,7 @@ function vAgenda() {
         const cons = (r.consumos || []).reduce((a, k) => a + k.cant, 0);
         cls = 'res' + (r.estado === 'cobrada' ? ' cobrada' : '');
         n = hy(r.cliente);
-        x = `<span class="xr">${toHora(toMin(r.ini))}–<wbr>${toHora(finDe(r))}</span>` + (r.estado === 'cobrada' ? '' : '<span class="xs"> · </span>' + `<span class="xs">${cons ? `${cons} consumo${cons > 1 ? 's' : ''} · ` : ''}${gs(totalReserva(r) - pagado(r))}</span>`);
+        x = `<span class="xr">${toHora(toMin(r.ini))}–<wbr>${toHora(finDe(r))}</span>${r.fijoId ? '<span class="fj"> · fijo</span>' : ''}` + (r.estado === 'cobrada' ? '' : '<span class="xs"> · </span>' + `<span class="xs">${cons ? `${cons} consumo${cons > 1 ? 's' : ''} · ` : ''}${gs(totalReserva(r) - pagado(r))}</span>`);
         if (r.estado === 'cobrada') extra = '<span class="stamp">COBRADO</span>';
         else if (finDe(r) <= now && (esHoy || diaPasado) || diaPasado) extra = '<span class="stamp debe">DEBE</span>';
         if (r.id === NUEVA) cls += ' drop';
@@ -807,7 +914,7 @@ function vAgenda() {
       <div class="datebar">
         <div class="day"><span class="solo-pc">${diaLargo(FECHA)}</span><span class="solo-cel">${DIAS_C[keyToDate(FECHA).getDay()]} ${keyToDate(FECHA).getDate()} ${MESES[keyToDate(FECHA).getMonth()].slice(0, 3)}</span><small>${esHoy ? 'Hoy' : FECHA < hoyKey() ? 'Día pasado' : 'Próximamente'} · ${String(horasLibres).replace('.', ',')} h libres</small></div>
         ${S.demo ? '<span class="demo-flag">Datos de demostración</span>' : ''}
-        <div class="row" style="margin-left:auto">
+        <div class="row" style="margin-left:auto">${modoAgenda()}
           <button class="iconbtn" data-act="dia" data-d="-1" aria-label="Día anterior"><svg><use href="#i-prev"/></svg></button>
           ${esHoy ? '' : `<button class="btn btn-sm" data-act="hoy">Hoy</button>`}
           <label class="iconbtn datepick" aria-label="Elegir fecha" title="Elegir fecha"><svg><use href="#i-cal"/></svg><input type="date" value="${FECHA}" data-in="fecha"></label>
@@ -852,8 +959,8 @@ function copiarDisp() {
 }
 
 /* ---------- hoja de turno ---------- */
-let DUR_SEL = 60, PARTES = 1;
-function abrirHoja(h) { HOJA = h; DUR_SEL = +DB.S.club.duracion || 60; PARTES = 1; $('#scrim').classList.remove('hidden'); requestAnimationFrame(() => { $('#scrim').classList.add('on'); $('#sheet').classList.add('on'); }); $('#sheet').setAttribute('aria-hidden', 'false'); renderHoja(); setTimeout(() => $('#sheet').querySelector('input,button.btn')?.focus(), 250); }
+let DUR_SEL = 60, PERSONA_SEL = '', FIJO_ON = false, FIJO_SEM = 4, DET_ABIERTO = false;
+function abrirHoja(h) { HOJA = h; DUR_SEL = +DB.S.club.duracion || 60; PERSONA_SEL = ''; FIJO_ON = false; FIJO_SEM = 4; DET_ABIERTO = false; $('#scrim').classList.remove('hidden'); requestAnimationFrame(() => { $('#scrim').classList.add('on'); $('#sheet').classList.add('on'); }); $('#sheet').setAttribute('aria-hidden', 'false'); renderHoja(); setTimeout(() => $('#sheet').querySelector('input,button.btn')?.focus(), 250); }
 function cerrarHoja(silencio) { HOJA = null; $('#sheet').classList.remove('on'); $('#scrim').classList.remove('on'); $('#sheet').setAttribute('aria-hidden', 'true'); setTimeout(() => { if (!HOJA) $('#scrim').classList.add('hidden'); }, 220); }
 function renderHoja() {
   const S = DB.S, h = HOJA; if (!h) return;
@@ -876,40 +983,56 @@ function renderHoja() {
           <span class="muted" style="font-weight:500">De ${toHora(ini)} a ${toHora(ini + DUR_SEL)} · ${gs(c.precio)} la hora${max < 360 ? ` · libre hasta las ${toHora(ini + max)}` : ''}</span></div>
         <label class="f">Precio del alquiler<input class="inp" id="rPrecio" inputmode="numeric" value="${miles(precioPor(c, DUR_SEL))}" oninput="formatoMiles(this)" ${esAdmin() ? '' : 'readonly'}></label>`;
       })()}
-      <button class="btn btn-ink btn-block" data-act="reservar">Reservar ${fmtDur(DUR_SEL)}</button>
+      <label class="check"><input type="checkbox" data-act="fijoToggle" ${FIJO_ON ? 'checked' : ''}> Turno fijo: se repite todos los ${DIAS[keyToDate(h.fecha).getDay()].toLowerCase()}</label>
+      ${FIJO_ON ? `<div class="f"><span>¿Por cuántas semanas?</span><div class="durs" role="group" aria-label="Semanas">${[4, 8, 12, 16].map(n => `<button data-act="fijoSem" data-n="${n}" aria-pressed="${FIJO_SEM === n}">${n} semanas</button>`).join('')}</div>
+        <span class="muted" style="font-weight:500">${FIJO_SEM} turnos, hasta el ${fechaCortaK(addDays(h.fecha, (FIJO_SEM - 1) * 7))}. Si alguna fecha ya está ocupada, se saltea. Después se puede extender.</span></div>` : ''}
+      <button class="btn btn-ink btn-block" data-act="reservar">${FIJO_ON ? `Reservar turno fijo · ${FIJO_SEM} semanas` : `Reservar ${fmtDur(DUR_SEL)}`}</button>
       ${esAdmin() ? `<hr class="rule"><button class="btn btn-line btn-sm" data-act="bloquearSlot">Bloquear este horario</button>` : ''}`;
   } else if (r.estado === 'bloqueo') {
     body = `<div class="note warn">Horario bloqueado: <b>${esc(r.cliente)}</b></div>${esAdmin() ? `<button class="btn btn-line" data-act="desbloquearSlot" data-id="${r.id}">Desbloquear</button>` : ''}`;
   } else {
-    const total = totalReserva(r), pag = pagado(r), saldo = total - pag, jug = PARTES;
-    const parte = Math.min(saldo, Math.ceil(total / Math.max(1, PARTES) / 1000) * 1000);
+    const total = totalReserva(r), pag = pagado(r), saldo = total - pag;
     const fin = finDe(r), libre = libreHasta(r.fecha, r.canchaId, fin, r.id), abierta = r.estado === 'reservada' || r.estado === 'enjuego';
     const cerrada = r.estado === 'cobrada';
     const prods = S.productos.filter(p => p.stock > 0);
+    const P = personasDe(r), N = Math.max(1, P.length), cuentas = cuentaPersonas(r);
+    if (PERSONA_SEL && !P.find(p => p.id === PERSONA_SEL)) PERSONA_SEL = '';
+    const nomP = id => P.find(p => p.id === id)?.nombre || '';
+    const cons = (r.consumos || []).slice().sort((a, b) => nomP(a.persona).localeCompare(nomP(b.persona)) || a.nombre.localeCompare(b.nombre));
+    const fijo = r.fijoId ? (S.fijos || []).find(f => f.id === r.fijoId) : null;
     body = `
       <div class="spread"><div><div style="font-family:var(--fc);font-weight:800;font-size:26px">${esc(r.cliente)}</div>
         <div class="muted" style="font-size:14px">${r.tel ? esc(r.tel) + ' · ' : ''}${rango(r)} · ${fmtDur(durDe(r))}</div></div>
-        <span class="pill">${r.estado === 'cobrada' ? 'Cobrada' : 'Reservada'}</span></div>
+        <span class="pill">${r.estado === 'cobrada' ? 'Cobrada' : 'Reservada'}${r.fijoId ? ' · fijo' : ''}</span></div>
       ${abierta ? `<div class="f"><span>Sumar tiempo</span><div class="row">${[30, 60].map(m => `<button class="btn btn-line" style="flex:1" data-act="extender" data-id="${r.id}" data-m="${m}" ${libre >= fin + m ? '' : 'disabled title="El horario siguiente está ocupado"'}>+${m === 30 ? '30 min' : '1 hora'} · ${miles(precioPor(c, m))}</button>`).join('')}</div>
         ${libre < fin + 30 ? `<span class="muted" style="font-weight:500">No se puede sumar: ${libre >= limites(S.club).c ? 'es el horario de cierre' : 'a las ' + toHora(fin) + ' entra otra reserva'}.</span>` : ''}</div>` : ''}
+      ${abierta ? `<div class="f"><span>Dividir la cuenta</span>
+        <div class="stepper"><button data-act="personasN" data-id="${r.id}" data-n="${N - 1}" ${N <= 1 ? 'disabled' : ''} aria-label="Una persona menos"><svg><use href="#i-minus"/></svg></button><b>${N === 1 ? 'Sin dividir' : 'Entre ' + N}</b><button data-act="personasN" data-id="${r.id}" data-n="${N + 1}" ${N >= 20 ? 'disabled' : ''} aria-label="Una persona más"><svg><use href="#i-plus"/></svg></button></div>
+        ${N > 1 ? `<div class="personas">${P.map(p => `<button class="persona" data-act="renombrarPersona" data-id="${p.id}" data-n="${esc(p.nombre)}">${esc(p.nombre)}<svg><use href="#i-edit"/></svg></button>`).join('')}</div>
+          <span class="muted" style="font-size:13px;font-weight:500">Tocá un nombre para cambiarlo. La cancha se divide en partes iguales y lo de la cantina lo paga quien lo pidió.</span>` : ''}</div>` : ''}
       <div>
         <h3 style="margin-bottom:4px">Cuenta de la cancha</h3>
         <div class="lines">
-          <div class="line"><div class="grow">Cancha ${rango(r)}<div class="sub">${fmtDur(durDe(r))}</div></div><b>${gs(r.precio)}</b></div>
-          ${(r.consumos || []).map((k, i) => `<div class="line"><div class="grow">${esc(k.nombre)}<div class="sub">${gs(k.precio)} c/u${k.tipo === 'alquiler' ? ' · alquiler, vuelve al stock al cobrar' : ''}</div></div>
-            ${cerrada ? `<span>×${k.cant}</span>` : `<span class="qty"><button data-act="consumo" data-id="${r.id}" data-p="${k.prodId}" data-d="-1" aria-label="Quitar uno"><svg><use href="#i-minus"/></svg></button><span>${k.cant}</span><button data-act="consumo" data-id="${r.id}" data-p="${k.prodId}" data-d="1" aria-label="Agregar uno"><svg><use href="#i-plus"/></svg></button></span>`}
+          <div class="line"><div class="grow">Cancha ${rango(r)}<div class="sub">${fmtDur(durDe(r))}${N > 1 ? ' · se divide entre ' + N : ''}</div></div><b>${gs(r.precio)}</b></div>
+          ${cons.map(k => `<div class="line"><div class="grow">${esc(k.nombre)}${N > 1 ? ` <span class="tag-p">${k.persona ? esc(nomP(k.persona)) : 'Para todos'}</span>` : ''}<div class="sub">${gs(k.precio)} c/u${k.tipo === 'alquiler' ? ' · alquiler, vuelve al stock al cobrar' : ''}</div></div>
+            ${cerrada ? `<span>×${k.cant}</span>` : `<span class="qty"><button data-act="consumo" data-id="${r.id}" data-p="${k.prodId}" data-per="${k.persona || ''}" data-d="-1" aria-label="Quitar uno"><svg><use href="#i-minus"/></svg></button><span>${k.cant}</span><button data-act="consumo" data-id="${r.id}" data-p="${k.prodId}" data-per="${k.persona || ''}" data-d="1" aria-label="Agregar uno"><svg><use href="#i-plus"/></svg></button></span>`}
             <b style="min-width:92px;text-align:right">${gs(k.precio * k.cant)}</b></div>`).join('')}
         </div>
       </div>
-      ${cerrada ? '' : `<details><summary class="btn btn-line btn-sm" style="list-style:none;width:max-content"><svg><use href="#i-plus"/></svg>Agregar de la cantina</summary>
+      ${cerrada ? '' : `<details ${DET_ABIERTO ? 'open' : ''} ontoggle="DET_ABIERTO=this.open"><summary class="btn btn-line btn-sm" style="list-style:none;width:max-content"><svg><use href="#i-plus"/></svg>Agregar de la cantina</summary>
+        ${N > 1 ? `<div class="f" style="margin-top:10px"><span>¿Para quién?</span><div class="chips-p">${[['', 'Para todos'], ...P.map(p => [p.id, p.nombre])].map(([id, n]) => `<button class="chip-p" data-act="personaSel" data-per="${id}" aria-pressed="${PERSONA_SEL === id}">${esc(n)}</button>`).join('')}</div></div>` : ''}
         <div class="prods" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));margin-top:10px">
           ${prods.map(p => `<button class="plate prod" style="min-height:84px;background:#fff" data-act="addConsumo" data-id="${r.id}" data-p="${p.id}"><span class="pn" style="font-size:16px">${esc(p.nombre)}</span><span class="row" style="justify-content:space-between"><b>${miles(p.precio)}</b><span class="ps ${p.stock <= p.minimo ? 'low' : ''}">${p.stock}</span></span></button>`).join('') || '<div class="muted">No hay productos con stock.</div>'}
         </div></details>`}
       <hr class="rule">
       <div class="spread"><span class="muted">Total</span><b>${gs(total)}</b></div>
-      ${(r.pagos || []).map(p => `<div class="spread" style="font-size:14px"><span class="muted">Pagó ${hhmm(p.ts)} · ${METODOS.find(m => m[0] === p.metodo)?.[1] || p.metodo}</span><span>− ${gs(p.monto)}</span></div>`).join('')}
+      ${(r.pagos || []).map(p => `<div class="spread" style="font-size:14px"><span class="muted">Pagó${p.persona ? ' ' + esc(nomP(p.persona)) : ''} ${hhmm(p.ts)} · ${METODOS.find(m => m[0] === p.metodo)?.[1] || p.metodo}</span><span>− ${gs(p.monto)}</span></div>`).join('')}
       <div class="spread"><span style="font-weight:700">${cerrada ? 'Cobrado' : 'Falta cobrar'}</span><span class="total">${gs(cerrada ? pag : saldo)}</span></div>
-      ${cerrada ? '' : cobroBloque(r, saldo, parte, jug)}
+      ${cerrada ? '' : cobroBloque(r, saldo, cuentas)}
+      ${fijo ? `<hr class="rule"><div class="f"><span>Turno fijo</span>
+        <div class="muted" style="font-weight:500">Todos los ${DIAS[keyToDate(fijo.desde).getDay()].toLowerCase()} a las ${toHora(toMin(fijo.ini))} en ${esc(nombreCancha(fijo.canchaId))}, hasta el ${fechaCortaK(fijo.hasta)}.</div>
+        <div class="row"><button class="btn btn-line btn-sm" data-act="fijoExt" data-id="${fijo.id}" data-sem="4">Extender 4 semanas</button><button class="btn btn-line btn-sm" data-act="fijoExt" data-id="${fijo.id}" data-sem="8">Extender 8 semanas</button>
+          ${abierta ? `<button class="btn btn-danger btn-sm" data-act="fijoCortar" data-id="${fijo.id}" data-desde="${r.fecha}">Cortar desde este día</button>` : ''}</div></div>` : ''}
       ${cerrada ? '' : `<hr class="rule"><div class="row">
         <button class="btn btn-line btn-sm" data-act="editarRes" data-id="${r.id}">Editar datos</button>
         <button class="btn btn-danger btn-sm" data-act="cancelarRes" data-id="${r.id}">Cancelar reserva</button></div>`}`;
@@ -920,17 +1043,14 @@ function renderHoja() {
   if (!r && !c.bloqueo) { if (prev.c && $('#rCliente')) $('#rCliente').value = prev.c; if (prev.t && $('#rTel')) $('#rTel').value = prev.t; }
 }
 let METODO = 'efectivo';
-function cobroBloque(r, saldo, parte, jug) {
+function cobroBloque(r, saldo, cuentas) {
   if (saldo <= 0) return `<div class="note">No queda nada por cobrar.</div><button class="btn btn-ink" data-act="cobrar" data-id="${r.id}" data-monto="0" data-cerrar="1">Cerrar la cuenta</button>`;
   if (!DB.S.caja.actual) return `<div class="note warn">Para cobrar tiene que haber una caja abierta.</div><button class="btn btn-ink" data-act="ir" data-v="caja">Abrir caja</button>`;
-  return `<div class="seg" role="group" aria-label="Forma de pago">${METODOS.map(([k, t]) => `<button data-act="metodo" data-m="${k}" aria-pressed="${METODO === k}">${t}</button>`).join('')}</div>
-    <div class="row" style="align-items:center"><span class="muted" style="font-size:14px">Dividir la cuenta</span>
-      <div class="seg" role="group" aria-label="Dividir entre">${[1, 2, 3, 4].map(n => `<button data-act="partes" data-n="${n}" aria-pressed="${PARTES === n}">${n === 1 ? 'No' : n}</button>`).join('')}</div></div>
-    <div class="row">
-      ${jug > 1 && parte < saldo ? `<button class="btn btn-line" style="flex:1" data-act="cobrar" data-id="${r.id}" data-monto="${parte}" data-parte="1">Una parte · ${miles(parte)}</button>` : ''}
-      <button class="btn btn-ink" style="flex:1" data-act="cobrar" data-id="${r.id}" data-monto="${saldo}">Cobrar ${miles(saldo)}</button>
-    </div>
-    ${jug > 1 ? `<div class="muted" style="font-size:13px">Entre ${jug}: cada uno paga ${gs(Math.ceil(totalReserva(r) / jug / 1000) * 1000)} aprox.</div>` : ''}`;
+  const metodos = `<div class="seg" role="group" aria-label="Forma de pago">${METODOS.map(([k, t]) => `<button data-act="metodo" data-m="${k}" aria-pressed="${METODO === k}">${t}</button>`).join('')}</div>`;
+  if (!cuentas) return metodos + `<button class="btn btn-ink btn-block" data-act="cobrar" data-id="${r.id}" data-monto="${saldo}">Cobrar ${miles(saldo)}</button>`;
+  return metodos + `<div class="lines">${cuentas.map(p => { const m = Math.min(p.saldo, saldo); return `<div class="line"><div class="grow"><b>${esc(p.nombre)}</b><div class="sub">cancha ${gs(p.comun)}${p.propio ? ' + cantina ' + gs(p.propio) : ''}${p.pago ? ' · pagó ' + gs(p.pago) : ''}</div></div>
+      ${m > 0 ? `<button class="btn btn-ink btn-sm" data-act="cobrar" data-id="${r.id}" data-per="${p.id}" data-monto="${m}" data-parte="1">Cobrar ${miles(m)}</button>` : '<span class="pill">Pagó</span>'}</div>`; }).join('')}</div>
+    <button class="btn btn-line btn-block" data-act="cobrar" data-id="${r.id}" data-monto="${saldo}">Cobrar todo junto · ${miles(saldo)}</button>`;
 }
 
 /* ---------- acciones de reservas ---------- */
@@ -941,6 +1061,12 @@ function reservar() {
   if (libreHasta(h.fecha, h.c, ini) < ini + dur || reservaEn(h.fecha, h.c, ini)) { toast('Ese horario se superpone con otra reserva'); renderHoja(); return; }
   const c = DB.S.canchas.find(x => x.id === h.c), id = uid();
   const precio = esAdmin() ? num($('#rPrecio').value) : precioPor(c, dur);
+  if (FIJO_ON) {
+    const f = { id: uid(), canchaId: h.c, ini: h.h, dur, cliente, tel: $('#rTel').value.trim(), precio, desde: h.fecha, hasta: addDays(h.fecha, (FIJO_SEM - 1) * 7) };
+    let n = 0; const no = [];
+    DB.commit(S => { S.fijos = S.fijos || []; S.fijos.push(f); for (let fk = f.desde; fk <= f.hasta; fk = addDays(fk, 7)) if (crearTurnoLocal(S, f, fk)) n++; else no.push(fechaCortaK(fk)); }, 'Turno fijo creado', `${c.nombre} · ${cliente}`);
+    toast(`Turno fijo: ${n} turnos reservados${no.length ? ' · ocupados: ' + no.join(', ') : ''}`); return;
+  }
   NUEVA = id; setTimeout(() => { NUEVA = null; }, 700);
   DB.commit(S => { S.reservas[id] = { id, fecha: h.fecha, canchaId: h.c, ini: h.h, dur, cliente, tel: $('#rTel').value.trim(), jugadores: 4, precio, estado: 'reservada', consumos: [], pagos: [], creado: Date.now() }; },
     'Reserva creada', `${c.nombre} ${h.fecha} ${h.h} · ${fmtDur(dur)} · ${cliente}`);
@@ -950,6 +1076,12 @@ async function bloquearSlot() {
   const f = await pedir('Bloquear horario', [{ id: 'm', label: 'Motivo', valor: 'Mantenimiento', ph: 'Mantenimiento, clase, torneo…' }], { boton: 'Bloquear' }); if (!f) return; const motivo = f.m;
   const h = HOJA, id = uid(), ini = toMin(h.h), dur = Math.min(60, libreHasta(h.fecha, h.c, ini) - ini);
   DB.commit(S => { S.reservas[id] = { id, fecha: h.fecha, canchaId: h.c, ini: h.h, dur, cliente: motivo || 'Bloqueado', estado: 'bloqueo', precio: 0, consumos: [], pagos: [] }; }, 'Horario bloqueado', `${h.fecha} ${h.h} · ${motivo}`);
+}
+function crearTurnoLocal(S, f, fk) {
+  const ini = toMin(f.ini);
+  if (Object.values(S.reservas).some(r => r.fecha === fk && r.canchaId === f.canchaId && r.estado !== 'cancelada' && toMin(r.ini) < ini + f.dur && ini < toMin(r.ini) + durDe(r))) return false;
+  const id = uid(); S.reservas[id] = { id, fecha: fk, canchaId: f.canchaId, ini: f.ini, dur: f.dur, cliente: f.cliente, tel: f.tel, precio: f.precio, estado: 'reservada', consumos: [], pagos: [], creado: Date.now(), fijoId: f.id };
+  return true;
 }
 function ajustarStock(S, prodId, delta, tipo, detalle) { const p = S.productos.find(x => x.id === prodId); if (p) p.stock = Math.max(0, p.stock + delta); }
 function devolverAlquileres(S, r) { for (const k of r.consumos || []) if (k.tipo === 'alquiler') ajustarStock(S, k.prodId, k.cant); }
@@ -968,7 +1100,36 @@ const ACT = {
   desbloquearSlot: d => DB.commit(S => { delete S.reservas[d.id]; }, 'Horario desbloqueado', `${HOJA.fecha} ${HOJA.h}`),
   metodo: d => { METODO = d.m; renderHoja(); },
   durSel: d => { const nom = $('#rCliente')?.value, tel = $('#rTel')?.value; DUR_SEL = +d.m; renderHoja(); if (nom) $('#rCliente').value = nom; if (tel) $('#rTel').value = tel; },
-  partes: d => { PARTES = +d.n; renderHoja(); },
+  personaSel: d => { PERSONA_SEL = d.per || ''; renderHoja(); },
+  fijoToggle: () => { FIJO_ON = !FIJO_ON; renderHoja(); },
+  fijoSem: d => { FIJO_SEM = +d.n; renderHoja(); },
+  modoAg: d => { MODO_AG = d.m; IR_AHORA = true; render(); },
+  semanaMov: d => { FECHA = d.d === '0' ? hoyKey() : addDays(FECHA, +d.d); render(); },
+  irDia: d => { FECHA = d.f; MODO_AG = 'dia'; IR_AHORA = true; render(); window.scrollTo({ top: 0 }); if (DB.nube) nube.asegurarFecha(FECHA); },
+  personasN: d => DB.commit(S => {
+    const r = S.reservas[d.id], n = Math.max(1, Math.min(20, +d.n)), P = personasDe(r);
+    const sacar = P.filter(p => p.orden > (n === 1 ? 0 : n));
+    if (sacar.some(p => (r.consumos || []).some(k => k.persona === p.id) || (r.pagos || []).some(x => x.persona === p.id))) { toast(ERRORES.PERSONA_CON_CONSUMOS); return; }
+    r.personas = n === 1 ? [] : P.filter(p => p.orden <= n);
+    for (let i = r.personas.length + 1; n > 1 && i <= n; i++) r.personas.push({ id: uid(), nombre: 'Jugador ' + i, orden: i });
+  }, 'Cuenta dividida', resTxt(d.id)),
+  renombrarPersona: async d => {
+    const f = await pedir('Nombre', [{ id: 'n', label: '¿Cómo se llama?', valor: d.n }], { boton: 'Guardar' }); if (!f || !f.n) return;
+    DB.commit(S => { for (const r of Object.values(S.reservas)) { const p = (r.personas || []).find(x => x.id === d.id); if (p) p.nombre = f.n.slice(0, 30); } });
+  },
+  fijoExt: d => {
+    const f = DB.S.fijos.find(x => x.id === d.id); if (!f) return;
+    const hasta = addDays(f.hasta, 7 * +d.sem); let fk = addDays(f.hasta, 7), n = 0;
+    DB.commit(S => { const x = S.fijos.find(y => y.id === d.id); x.hasta = hasta; for (; fk <= hasta; fk = addDays(fk, 7)) if (crearTurnoLocal(S, x, fk)) n++; }, 'Turno fijo extendido', `${f.cliente} · hasta ${hasta}`);
+    toast(`Turno fijo extendido: ${n} turnos más`);
+  },
+  fijoCortar: async d => {
+    const f = DB.S.fijos.find(x => x.id === d.id); if (!f) return;
+    if (!(await confirmar(`¿Cortar el turno fijo de ${f.cliente} desde el ${fechaCortaK(d.desde)}? Se cancelan los turnos que quedan (los ya cobrados no se tocan).`, 'Cortar turno fijo'))) return;
+    cerrarHoja();
+    DB.commit(S => { const x = S.fijos.find(y => y.id === d.id); x.hasta = addDays(d.desde, -1) < x.desde ? x.desde : addDays(d.desde, -1);
+      for (const r of Object.values(S.reservas)) if (r.fijoId === x.id && r.fecha >= d.desde && r.estado === 'reservada' && !pagado(r)) r.estado = 'cancelada'; }, 'Turno fijo cortado', f.cliente);
+  },
   extender: d => {
     const r = DB.S.reservas[d.id], m = +d.m, c = DB.S.canchas.find(x => x.id === r.canchaId);
     if (libreHasta(r.fecha, r.canchaId, finDe(r), r.id) < finDe(r) + m) { toast('El horario siguiente está ocupado'); return; }
@@ -977,19 +1138,21 @@ const ACT = {
   },
   addConsumo: d => {
     const p = DB.S.productos.find(x => x.id === d.p); if (!p || p.stock <= 0) { toast('Sin stock'); return; }
+    const per = PERSONA_SEL || null;
     DB.commit(S => {
       const r = S.reservas[d.id]; r.consumos = r.consumos || [];
-      const k = r.consumos.find(x => x.prodId === p.id);
-      if (k) k.cant++; else r.consumos.push({ prodId: p.id, nombre: p.nombre, precio: p.precio, costo: p.costo || 0, cant: 1, tipo: p.tipo });
+      const k = r.consumos.find(x => x.prodId === p.id && (x.persona || null) === per);
+      if (k) k.cant++; else r.consumos.push({ prodId: p.id, nombre: p.nombre, precio: p.precio, costo: p.costo || 0, cant: 1, tipo: p.tipo, persona: per });
       ajustarStock(S, p.id, -1);
     }, 'Consumo a cancha', `${p.nombre} → ${resTxt(d.id)}`);
   },
   consumo: d => {
     DB.commit(S => {
-      const r = S.reservas[d.id], k = r.consumos[+d.i], p = S.productos.find(x => x.id === k.prodId);
+      const r = S.reservas[d.id], i = r.consumos.findIndex(x => x.prodId === d.p && (x.persona || '') === (d.per || '')), k = r.consumos[i], p = S.productos.find(x => x.id === d.p);
+      if (!k) return;
       if (+d.d > 0 && (!p || p.stock <= 0)) { toast('Sin stock'); return; }
       k.cant += +d.d; ajustarStock(S, k.prodId, -(+d.d));
-      if (k.cant <= 0) r.consumos.splice(+d.i, 1);
+      if (k.cant <= 0) r.consumos.splice(i, 1);
     }, +d.d > 0 ? 'Consumo a cancha' : 'Consumo quitado', resTxt(d.id));
   },
   cobrar: d => {
@@ -999,7 +1162,7 @@ const ACT = {
     if (!DB.S.caja.actual) { toast('Abrí la caja primero'); return; }
     DB.commit(S => {
       const r = S.reservas[d.id];
-      r.pagos.push({ ts: Date.now(), monto, metodo: METODO, op: OP.nombre, parte: !!d.parte });
+      r.pagos.push({ ts: Date.now(), monto, metodo: METODO, op: OP.nombre, parte: !!d.parte, persona: d.per || null });
       S.caja.actual.movs.push({ ts: Date.now(), tipo: 'cancha', monto, metodo: METODO, ref: `${nombreCancha(r.canchaId)} ${r.ini} · ${r.cliente}`, op: OP.nombre,
         detalle: { turno: 0, consumos: [] } });
       if (pagado(r) >= totalReserva(r)) { r.estado = 'cobrada'; r.cobradaTs = Date.now(); devolverAlquileres(S, r); }
@@ -1024,7 +1187,7 @@ const nombreCancha = id => DB.S.canchas.find(c => c.id === id)?.nombre || 'Canch
 function resTxt(id) { const r = DB.S.reservas[id]; return r ? `${nombreCancha(r.canchaId)} ${r.fecha} ${r.ini} · ${r.cliente}` : ''; }
 
 /* ---------- CANTINA ---------- */
-let CAT = 'Todo', CARRO = [], DESTINO = 'directa', SUBC = 'vender';
+let CAT = 'Todo', CARRO = [], DESTINO = 'directa', DESTINO_PER = '', SUBC = 'vender';
 function reservasAbiertasHoy() { const h = hoyKey(), ay = addDays(h, -1); return Object.values(DB.S.reservas).filter(r => (r.fecha === h || r.fecha === ay) && (r.estado === 'reservada' || r.estado === 'enjuego')).sort((a, b) => a.fecha.localeCompare(b.fecha) || a.ini.localeCompare(b.ini)); }
 function vCantina() {
   const S = DB.S;
@@ -1054,6 +1217,9 @@ function vCantina() {
           <option value="directa" ${DESTINO === 'directa' ? 'selected' : ''}>Venta directa (se paga ahora)</option>
           ${abiertas.map(r => `<option value="${r.id}" ${DESTINO === r.id ? 'selected' : ''}>A la cuenta: ${esc(nombreCancha(r.canchaId))} ${r.fecha !== hoyKey() ? 'anoche ' : ''}${toHora(toMin(r.ini))} · ${esc(r.cliente)}</option>`).join('')}
         </select></label>
+      ${(() => { const rr = DB.S.reservas[DESTINO], PP = rr ? personasDe(rr) : []; if (PP.length < 2) { DESTINO_PER = ''; return ''; }
+        if (DESTINO_PER && !PP.find(p => p.id === DESTINO_PER)) DESTINO_PER = '';
+        return `<label class="f">¿Para quién?<select class="inp" data-in="destinoPer"><option value="">Para todos (se divide)</option>${PP.map(p => `<option value="${p.id}" ${DESTINO_PER === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}</select></label>`; })()}
       <div class="lines">${CARRO.map((k, i) => `<div class="line"><div class="grow">${esc(k.nombre)}<div class="sub">${gs(k.precio)} c/u</div></div>
         <span class="qty"><button data-act="carro" data-i="${i}" data-d="-1" aria-label="Quitar uno"><svg><use href="#i-minus"/></svg></button><span>${k.cant}</span><button data-act="carro" data-i="${i}" data-d="1" aria-label="Agregar uno"><svg><use href="#i-plus"/></svg></button></span></div>`).join('')
         || '<div class="muted" style="padding:10px 0">Tocá los productos para armar el pedido.</div>'}</div>
@@ -1103,7 +1269,8 @@ Object.assign(ACT, {
     const items = CARRO.map(k => ({ ...k }));
     DB.commit(S => {
       const x = S.reservas[r.id]; x.consumos = x.consumos || [];
-      for (const k of items) { const e = x.consumos.find(c => c.prodId === k.prodId); if (e) e.cant += k.cant; else x.consumos.push({ ...k }); ajustarStock(S, k.prodId, -k.cant); }
+      const per = DESTINO_PER || null;
+      for (const k of items) { const e = x.consumos.find(c => c.prodId === k.prodId && (c.persona || null) === per); if (e) e.cant += k.cant; else x.consumos.push({ ...k, persona: per }); ajustarStock(S, k.prodId, -k.cant); }
     }, 'Consumo a cancha', `${items.map(k => k.cant + '× ' + k.nombre).join(', ')} → ${resTxt(r.id)}`);
     CARRO = []; render(); toast('Cargado a ' + nombreCancha(r.canchaId));
   },
@@ -1327,9 +1494,16 @@ function editarOp(id) {
     <label class="f">Rol<select class="inp" id="oRol"><option value="operador" ${o.rol !== 'admin' ? 'selected' : ''}>Operador (reservas, cantina y caja)</option><option value="admin" ${o.rol === 'admin' ? 'selected' : ''}>Administrador (todo, precios y reportes)</option></select></label>
     <label class="row" style="font-weight:600"><input type="checkbox" id="oAct" ${o.activo ? 'checked' : ''} style="width:20px;height:20px"> Puede entrar</label>
     <button class="btn btn-ink" data-act="guardarOp" data-id="${id || ''}">Guardar</button>
+    ${id && OP && id !== OP.id ? `<hr class="rule"><button class="btn btn-danger" data-act="borrarOp" data-id="${id}">Borrar persona</button>` : ''}
   </div>`;
   $('#scrim').classList.remove('hidden'); requestAnimationFrame(() => { $('#scrim').classList.add('on'); $('#sheet').classList.add('on'); });
 }
+ACT.borrarOp = async d => {
+  const o = DB.S.operadores.find(x => x.id === d.id); if (!o) return;
+  if (o.rol === 'admin' && DB.S.operadores.filter(x => x.rol === 'admin' && x.activo && x.id !== o.id).length === 0) { toast('Tiene que quedar al menos un administrador activo'); return; }
+  if (!(await confirmar(`¿Borrar a ${o.nombre}?`, 'Borrar persona'))) return;
+  cerrarHoja(); DB.commit(S => { S.operadores = S.operadores.filter(x => x.id !== d.id); }, 'Persona borrada', o.nombre);
+};
 ACT.guardarOp = d => {
   const nombre = $('#oNom').value.trim(), pin = $('#oPin').value.trim(), rol = $('#oRol').value, activo = $('#oAct').checked;
   if (!nombre) { toast('Poné el nombre'); return; }
@@ -1355,7 +1529,7 @@ let sb = null;
 const ERRORES = {
   CAJA_CERRADA: 'Abrí la caja para poder cobrar', SIN_STOCK: 'No hay stock suficiente', RESERVA_CERRADA: 'Esa reserva ya está cerrada',
   MONTO_INVALIDO: 'El monto no es válido', TIENE_PAGOS: 'Tiene pagos registrados: no se puede cancelar', ALQUILER_SOLO_CANCHA: 'El alquiler se carga a la cuenta de una cancha',
-  PEDIDO_VACIO: 'El pedido está vacío', HORARIO_OCUPADO: 'El horario siguiente ya está ocupado', FUERA_DE_HORARIO: 'Se pasa del horario de cierre del club', DEMASIADOS_INTENTOS: 'Demasiados intentos. Esperá una hora e intentá de nuevo.', PRODUCTO_NO_EXISTE: 'Ese producto ya no existe', CANCHA_CON_RESERVAS: 'Esa cancha tiene reservas pendientes. Cancelalas o movelas antes de borrarla.', CANTIDAD_INVALIDA: 'La cantidad tiene que ser 1 o más', METODO_INVALIDO: 'Elegí la forma de pago', CANCHA_NO_EXISTE: 'Esa cancha ya no existe', YA_PAGADO: 'No se puede quitar: esa parte ya está cobrada', PIN_ADMIN: 'PIN de administrador incorrecto', SIN_ADMIN: 'Tiene que quedar al menos un administrador activo', YA_HAY_ADMIN: 'El club ya tiene administrador', NO_AUTORIZADO: 'Este dispositivo no tiene permiso', FALTA_NOMBRE: 'Poné el nombre', SESION_VENCIDA: 'Tu sesión venció: entrá de nuevo con tu PIN', SOLO_ADMIN: 'Eso lo puede hacer solo administración', CANCHA_BLOQUEADA: 'Esa cancha está bloqueada', PIN_INVALIDO: 'El PIN tiene que ser de 4 números', TIPO_INVALIDO: 'Tipo de producto no válido', ROL_INVALIDO: 'Rol no válido'
+  PEDIDO_VACIO: 'El pedido está vacío', HORARIO_OCUPADO: 'El horario siguiente ya está ocupado', FUERA_DE_HORARIO: 'Se pasa del horario de cierre del club', DEMASIADOS_INTENTOS: 'Demasiados intentos. Esperá una hora e intentá de nuevo.', PRODUCTO_NO_EXISTE: 'Ese producto ya no existe', CANCHA_CON_RESERVAS: 'Esa cancha tiene reservas pendientes. Cancelalas o movelas antes de borrarla.', CANTIDAD_INVALIDA: 'La cantidad tiene que ser 1 o más', METODO_INVALIDO: 'Elegí la forma de pago', CANCHA_NO_EXISTE: 'Esa cancha ya no existe', YA_PAGADO: 'No se puede quitar: esa parte ya está cobrada', PIN_ADMIN: 'PIN de administrador incorrecto', SIN_ADMIN: 'Tiene que quedar al menos un administrador activo', YA_HAY_ADMIN: 'El club ya tiene administrador', NO_AUTORIZADO: 'Este dispositivo no tiene permiso', FALTA_NOMBRE: 'Poné el nombre', SESION_VENCIDA: 'Tu sesión venció: entrá de nuevo con tu PIN', PERSONA_CON_CONSUMOS: 'Esa persona ya tiene consumos o pagos: quitáselos antes de sacarla', PERSONA_NO_EXISTE: 'Esa persona ya no está en la cuenta', NO_BORRAR_A_UNO_MISMO: 'No podés borrarte a vos mismo', FECHA_INVALIDA: 'La fecha no es válida', FIJO_MUY_LARGO: 'Un turno fijo puede durar hasta 6 meses; después se extiende', FIJO_SIN_LUGAR: 'Todas esas fechas ya están ocupadas', SOLO_ADMIN: 'Eso lo puede hacer solo administración', CANCHA_BLOQUEADA: 'Esa cancha está bloqueada', PIN_INVALIDO: 'El PIN tiene que ser de 4 números', TIPO_INVALIDO: 'Tipo de producto no válido', ROL_INVALIDO: 'Rol no válido'
 };
 function msgError(e) {
   const m = String((e && (e.message || e.details)) || e || '');
@@ -1413,7 +1587,7 @@ const nube = {
   async cargarTodo() {
     this.desde = addDays(hoyKey(), -62); this.hasta = addDays(hoyKey(), 120);
     await Promise.all([this.cargarClub(), this.cargarCanchas(), this.cargarProductos(), this.cargarOperadores(),
-      this.cargarReservas(), this.cargarCaja(), this.cargarHistorial(), this.cargarDispositivos()]);
+      this.cargarReservas(), this.cargarCaja(), this.cargarHistorial(), this.cargarDispositivos(), this.cargarFijos()]);
   },
   async cargarClub() {
     const c = await q(sb.from('clubs').select('id,nombre,apertura,cierre,duracion,activo').eq('id', this.C).single());
@@ -1435,11 +1609,13 @@ const nube = {
   mapReserva(r) {
     return { id: r.id, fecha: r.fecha, canchaId: r.cancha_id, ini: r.ini, dur: r.dur || 60, cliente: r.cliente, tel: r.tel, jugadores: r.jugadores, precio: r.precio,
       estado: r.estado, motivo: r.motivo, creado: ms(r.creado),
-      consumos: (r.consumos || []).slice().sort((a, b) => a.nombre.localeCompare(b.nombre) || String(a.id).localeCompare(String(b.id))).map(c => ({ prodId: c.producto_id, nombre: c.nombre, precio: c.precio, costo: c.costo, cant: c.cant, tipo: c.tipo })),
-      pagos: (r.pagos || []).sort((a, b) => ms(a.ts) - ms(b.ts)).map(p => ({ ts: ms(p.ts), monto: p.monto, metodo: p.metodo, op: p.operador, parte: p.parte })) };
+      consumos: (r.consumos || []).slice().sort((a, b) => a.nombre.localeCompare(b.nombre) || String(a.id).localeCompare(String(b.id))).map(c => ({ prodId: c.producto_id, nombre: c.nombre, precio: c.precio, costo: c.costo, cant: c.cant, tipo: c.tipo, persona: c.persona_id || null })),
+      personas: (r.personas || []).map(p => ({ id: p.id, nombre: p.nombre, orden: p.orden })), fijoId: r.fijo_id || null,
+      pagos: (r.pagos || []).sort((a, b) => ms(a.ts) - ms(b.ts)).map(p => ({ ts: ms(p.ts), monto: p.monto, metodo: p.metodo, op: p.operador, parte: p.parte, persona: p.persona_id || null })) };
   },
   async cargarReservas(desde = this.desde, hasta = this.hasta, reemplazar = true) {
-    const r = await todo(() => sb.from('reservas').select('*, consumos(*), pagos:caja_movs(ts,monto,metodo,operador,parte)')
+    if (reemplazar) this.extra = new Set();
+    const r = await todo(() => sb.from('reservas').select('*, consumos(*), personas:reserva_personas(id,nombre,orden), pagos:caja_movs(ts,monto,metodo,operador,parte,persona_id)')
       .eq('club_id', this.C).gte('fecha', desde).lte('fecha', hasta).neq('estado', 'cancelada').order('fecha').order('ini').order('id'));
     const nuevo = reemplazar ? {} : { ...this.S.reservas };
     if (!reemplazar) for (const [k, v] of Object.entries(nuevo)) if (v.fecha >= desde && v.fecha <= hasta) delete nuevo[k];
@@ -1447,9 +1623,12 @@ const nube = {
     for (const x of r) nuevo[x.id] = this.mapReserva(x);
     this.S.reservas = nuevo;
   },
+  // trae las reservas de una fecha fuera del rango inicial (una sola vez por fecha)
   async asegurarFecha(fk) {
     if (fk >= this.desde && fk <= this.hasta) return;
-    await this.cargarReservas(addDays(fk, -7), addDays(fk, 7), false); render();
+    this.extra = this.extra || new Set(); if (this.extra.has(fk)) return; this.extra.add(fk);
+    try { await this.cargarReservas(addDays(fk, -7), addDays(fk, 7), false); } catch (e) { this.extra.delete(fk); throw e; }
+    renderSeguro();
   },
   async cargarCaja() {
     const cajas = await q(sb.from('cajas').select('*').eq('club_id', this.C).or(`cierre.is.null,apertura.gte.${this.desde}`).order('apertura', { ascending: false }).limit(120));
@@ -1465,6 +1644,10 @@ const nube = {
   async cargarHistorial() {
     const r = await q(sb.from('historial').select('ts,operador,accion,detalle').eq('club_id', this.C).order('ts', { ascending: false }).limit(250));
     this.S.historial = r.map(h => ({ ts: ms(h.ts), op: h.operador, accion: h.accion, detalle: h.detalle }));
+  },
+  async cargarFijos() {
+    const r = await q(sb.from('turnos_fijos').select('*').eq('club_id', this.C).order('desde'));
+    this.S.fijos = r.map(f => ({ id: f.id, canchaId: f.cancha_id, ini: f.ini, dur: f.dur, cliente: f.cliente, tel: f.tel, desde: f.desde, hasta: f.hasta }));
   },
   async cargarDispositivos() {
     const r = await q(sb.from('dispositivos').select('*').eq('club_id', this.C).order('creado'));
@@ -1483,6 +1666,7 @@ const nube = {
     on('cajas', () => this.cargarCaja());
     on('productos', () => this.cargarProductos());
     on('canchas', () => this.cargarCanchas());
+    on('turnos_fijos', () => this.cargarFijos());
     on('historial', () => Promise.all([this.cargarHistorial(), this.cargarCanchas()]));
     ch.on('postgres_changes', { event: '*', schema: 'public', table: 'clubs', filter: 'id=eq.' + this.C }, () => prog('clubs', () => { this.revisarServicio(); return this.cargarClub(); }));
     ch.subscribe();
@@ -1566,6 +1750,15 @@ const ACT_NUBE = {
     if (!cliente) { toast('Escribí el nombre de quien reserva'); $('#rCliente').focus(); return; }
     const c = DB.S.canchas.find(x => x.id === h.c), dur = DUR_SEL, precio = esAdmin() ? num($('#rPrecio').value) : precioPor(c, dur);
     const args = { p_club: nube.C, p_token: OP_TOK, p_cancha: h.c, p_fecha: h.fecha, p_ini: h.h, p_dur: dur, p_cliente: cliente, p_tel: $('#rTel').value.trim(), p_precio: esAdmin() ? precio : null };
+    if (FIJO_ON) {
+      const fa = { p_club: nube.C, p_token: OP_TOK, p_cancha: h.c, p_desde: h.fecha, p_ini: h.h, p_dur: dur, p_cliente: cliente, p_tel: args.p_tel, p_hasta: addDays(h.fecha, (FIJO_SEM - 1) * 7), p_precio: args.p_precio };
+      nube.hacer(async () => {
+        const res = await q(sb.rpc('fijo_crear', fa)); const no = res.ocupadas || [];
+        nube.contactos = null; await nube.asegurarFecha(fa.p_hasta);
+        toast(`Turno fijo: ${res.creadas} turnos reservados${no.length ? ' · ocupados (se saltearon): ' + no.join(', ') : ''}`);
+      }, ['Reservas', 'Fijos']);
+      return;
+    }
     nube.hacer(async () => {
       const id = await q(sb.rpc('reserva_crear', args));
       NUEVA = id; setTimeout(() => { NUEVA = null; }, 700); nube.contactos = null;
@@ -1582,13 +1775,13 @@ const ACT_NUBE = {
     const r = DB.S.reservas[d.id], m = +d.m, c = DB.S.canchas.find(x => x.id === r.canchaId);
     nube.hacer(() => q(sb.rpc('reserva_extender', { p_club: nube.C, p_reserva: d.id, p_min: m, p_token: OP_TOK })), ['Reservas'], `Se sumaron ${fmtDur(m)}: ${gs(precioPor(c, m))}`);
   },
-  addConsumo: d => nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: 1, p_token: OP_TOK })), ['Reservas', 'Productos']),
+  addConsumo: d => nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: 1, p_token: OP_TOK, p_persona: PERSONA_SEL || null })), ['Reservas', 'Productos']),
   consumo: d => {
-    nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: +d.d, p_token: OP_TOK })), ['Reservas', 'Productos']);
+    nube.hacer(() => q(sb.rpc('consumo_cambiar', { p_club: nube.C, p_reserva: d.id, p_producto: d.p, p_delta: +d.d, p_token: OP_TOK, p_persona: d.per || null })), ['Reservas', 'Productos']);
   },
   cobrar: d => {
     const monto = +d.monto; if (!(monto > 0) && !d.cerrar) return;
-    nube.hacer(() => q(sb.rpc('reserva_cobrar', { p_club: nube.C, p_reserva: d.id, p_monto: monto, p_metodo: METODO, p_token: OP_TOK, p_parte: !!d.parte })),
+    nube.hacer(() => q(sb.rpc('reserva_cobrar', { p_club: nube.C, p_reserva: d.id, p_monto: monto, p_metodo: METODO, p_token: OP_TOK, p_parte: !!d.parte, p_persona: d.per || null })),
       ['Reservas', 'Caja', 'Productos'], 'Cobrado ' + gs(monto));
   },
   editarRes: async d => {
@@ -1612,7 +1805,7 @@ const ACT_NUBE = {
   cargarCancha: () => {
     const r = DB.S.reservas[DESTINO]; if (!r || !CARRO.length) return;
     const items = CARRO.map(k => ({ id: k.prodId, cant: k.cant }));
-    nube.hacer(async () => { await q(sb.rpc('pedido_a_cancha', { p_club: nube.C, p_reserva: r.id, p_items: items, p_token: OP_TOK })); CARRO = []; }, ['Reservas', 'Productos'], 'Cargado a ' + nombreCancha(r.canchaId));
+    nube.hacer(async () => { await q(sb.rpc('pedido_a_cancha', { p_club: nube.C, p_reserva: r.id, p_items: items, p_token: OP_TOK, p_persona: DESTINO_PER || null })); CARRO = []; }, ['Reservas', 'Productos'], 'Cargado a ' + nombreCancha(r.canchaId));
   },
   entrada: async d => {
     const p = DB.S.productos.find(x => x.id === d.p);
@@ -1684,6 +1877,29 @@ const ACT_NUBE = {
     nube.hacer(() => q(sb.rpc('operador_guardar', { p_club: nube.C, p_token: OP_TOK, p_id: d.id || null, p_nombre: nombre, p_pin: pin || null, p_rol: rol, p_activo: activo })), ['Operadores'], 'Guardado');
   },
   dispActivo: d => nube.hacer(() => q(sb.rpc('dispositivo_activo', { p_club: nube.C, p_token: OP_TOK, p_user: d.id, p_activo: d.v === '1' })), ['Dispositivos']),
+  personasN: d => nube.hacer(() => q(sb.rpc('reserva_personas_fijar', { p_club: nube.C, p_token: OP_TOK, p_reserva: d.id, p_cantidad: +d.n })), ['Reservas']),
+  renombrarPersona: async d => {
+    const f = await pedir('Nombre', [{ id: 'n', label: '¿Cómo se llama?', valor: d.n }], { boton: 'Guardar' }); if (!f || !f.n) return;
+    nube.hacer(() => q(sb.rpc('persona_renombrar', { p_club: nube.C, p_token: OP_TOK, p_persona: d.id, p_nombre: f.n })), ['Reservas']);
+  },
+  fijoExt: d => {
+    const f = DB.S.fijos.find(x => x.id === d.id); if (!f) return;
+    const hasta = addDays(f.hasta < hoyKey() ? hoyKey() : f.hasta, 7 * +d.sem);
+    nube.hacer(async () => { const res = await q(sb.rpc('fijo_extender', { p_club: nube.C, p_token: OP_TOK, p_fijo: f.id, p_hasta: hasta })); await nube.asegurarFecha(hasta);
+      const no = res.ocupadas || []; toast(`Extendido hasta el ${fechaCortaK(hasta)}: ${res.creadas} turnos más${no.length ? ' · ocupados: ' + no.join(', ') : ''}`); }, ['Reservas', 'Fijos']);
+  },
+  fijoCortar: async d => {
+    const f = DB.S.fijos.find(x => x.id === d.id); if (!f) return;
+    if (!(await confirmar(`¿Cortar el turno fijo de ${f.cliente} desde el ${fechaCortaK(d.desde)}? Se cancelan los turnos que quedan (los ya cobrados no se tocan).`, 'Cortar turno fijo'))) return;
+    cerrarHoja();
+    nube.hacer(async () => { const n = await q(sb.rpc('fijo_cortar', { p_club: nube.C, p_token: OP_TOK, p_fijo: f.id, p_desde: d.desde })); toast(`Turno fijo cortado: ${n} turnos cancelados`); }, ['Reservas', 'Fijos']);
+  },
+  borrarOp: async d => {
+    const o = DB.S.operadores.find(x => x.id === d.id); if (!o) return;
+    if (!(await confirmar(`¿Borrar a ${o.nombre}? Ya no va a poder entrar. Lo que hizo queda en el historial con su nombre.`, 'Borrar persona'))) return;
+    cerrarHoja();
+    nube.hacer(() => q(sb.rpc('operador_borrar', { p_club: nube.C, p_token: OP_TOK, p_id: d.id })), ['Operadores'], 'Persona borrada');
+  },
   bloquear: () => { if (OP_TOK) sb.rpc('sesion_cerrar', { p_club: nube.C, p_token: OP_TOK }).then(() => {}); olvidarSesion(); cerrarHoja(); render(); },
   usarContacto: d => { if ($('#rCliente')) $('#rCliente').value = d.n; if ($('#rTel') && d.t) $('#rTel').value = d.t; const b = $('#rSug'); if (b) b.innerHTML = ''; },
   exportarClientes: () => exportarClientes(),
@@ -1699,6 +1915,7 @@ function editarOpNube(id) {
     <label class="f">Rol<select class="inp" id="oRol"><option value="operador" ${o.rol !== 'admin' ? 'selected' : ''}>Operador (reservas, cantina y caja)</option><option value="admin" ${o.rol === 'admin' ? 'selected' : ''}>Administrador (todo, precios y reportes)</option></select></label>
     <label class="row" style="font-weight:600"><input type="checkbox" id="oAct" ${o.activo ? 'checked' : ''} style="width:20px;height:20px"> Puede entrar</label>
     <button class="btn btn-ink" data-act="guardarOp" data-id="${id || ''}">Guardar</button>
+    ${id && OP && id !== OP.id ? `<hr class="rule"><button class="btn btn-danger" data-act="borrarOp" data-id="${id}">Borrar persona</button>` : ''}
   </div>`;
   $('#scrim').classList.remove('hidden'); requestAnimationFrame(() => { $('#scrim').classList.add('on'); $('#sheet').classList.add('on'); });
 }
@@ -1800,7 +2017,8 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const k = e.target.dataset.in;
   if (k === 'fecha' && e.target.value) { FECHA = e.target.value; IR_AHORA = true; render(); if (DB.nube) nube.asegurarFecha(FECHA); }
-  if (k === 'destino') { DESTINO = e.target.value; render(); }
+  if (k === 'destino') { DESTINO = e.target.value; DESTINO_PER = ''; render(); }
+  if (k === 'destinoPer') { DESTINO_PER = e.target.value; }
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && $('#sheet').classList.contains('on')) ACT.cerrarHoja();
