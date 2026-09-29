@@ -658,12 +658,12 @@ const personasDe = r => (r.personas || []).slice().sort((a, b) => a.orden - b.or
 function cuentaPersonas(r) {
   const P = personasDe(r); if (P.length < 2) return null;
   const comun = (+r.precio || 0) + (r.consumos || []).filter(k => !k.persona).reduce((a, k) => a + k.precio * k.cant, 0);
-  // partes redondeadas a miles (más fácil de pagar en efectivo); la diferencia la pone el primero
-  const u = comun >= P.length * 1000 ? 1000 : 1, base = Math.floor(comun / P.length / u) * u, resto = comun - base * P.length;
+  // partes iguales, en múltiplos de 50 Gs.; si no divide justo, la diferencia se reparte de a 50 entre los primeros
+  const u = comun >= P.length * 50 ? 50 : 1, base = Math.floor(comun / P.length / u) * u, extras = Math.round((comun - base * P.length) / u);
   return P.map((p, i) => {
     const propio = (r.consumos || []).filter(k => k.persona === p.id).reduce((a, k) => a + k.precio * k.cant, 0);
     const pago = (r.pagos || []).filter(x => x.persona === p.id).reduce((a, x) => a + x.monto, 0);
-    const c = base + (i === 0 ? resto : 0);
+    const c = base + (i < extras ? u : 0) + (i === 0 ? comun - base * P.length - extras * u : 0);
     return { ...p, comun: c, propio, pago, saldo: Math.max(0, c + propio - pago) };
   });
 }
