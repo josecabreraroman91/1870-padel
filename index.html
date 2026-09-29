@@ -658,8 +658,9 @@ const personasDe = r => (r.personas || []).slice().sort((a, b) => a.orden - b.or
 function cuentaPersonas(r) {
   const P = personasDe(r); if (P.length < 2) return null;
   const comun = (+r.precio || 0) + (r.consumos || []).filter(k => !k.persona).reduce((a, k) => a + k.precio * k.cant, 0);
-  // partes iguales, en múltiplos de 50 Gs.; si no divide justo, la diferencia se reparte de a 50 entre los primeros
-  const u = comun >= P.length * 50 ? 50 : 1, base = Math.floor(comun / P.length / u) * u, extras = Math.round((comun - base * P.length) / u);
+  // partes iguales. Si el monto es múltiplo de 50 Gs., cada parte también (la diferencia se reparte de a 50 entre los primeros);
+  // si no, se reparte de a 1 Gs. La suma de las partes es siempre exactamente el total.
+  const u = comun % 50 === 0 && comun >= P.length * 50 ? 50 : 1, base = Math.floor(comun / P.length / u) * u, extras = Math.round((comun - base * P.length) / u);
   return P.map((p, i) => {
     const propio = (r.consumos || []).filter(k => k.persona === p.id).reduce((a, k) => a + k.precio * k.cant, 0);
     const pago = (r.pagos || []).filter(x => x.persona === p.id).reduce((a, x) => a + x.monto, 0);
