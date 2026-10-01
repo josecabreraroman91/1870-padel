@@ -738,6 +738,8 @@ function avisoServicio() {
 const fmtFechaCorta = f => { const [a, m, d] = String(f).split('-'); return `${d}/${m}/${a}`; };
 let CONSERVAR = false;
 function ponerHTML(el, html) {
+  if (el._html === html) return; // nada cambió: no se toca la pantalla (evita saltos y "congelados" en iPhone)
+  el._html = html;
   if (!CONSERVAR) { el.innerHTML = html; return; }
   const v = {}; el.querySelectorAll('input[id],textarea[id],select[id]').forEach(i => { if (i.type === 'checkbox') v[i.id] = i.checked; else v[i.id] = i.value; });
   el.innerHTML = html;
@@ -962,7 +964,7 @@ function copiarDisp() {
 /* ---------- hoja de turno ---------- */
 let DUR_SEL = 60, PERSONA_SEL = '', FIJO_ON = false, FIJO_SEM = 4, DET_ABIERTO = false;
 function abrirHoja(h) { HOJA = h; DUR_SEL = +DB.S.club.duracion || 60; PERSONA_SEL = ''; FIJO_ON = false; FIJO_SEM = 4; DET_ABIERTO = false; $('#scrim').classList.remove('hidden'); requestAnimationFrame(() => { $('#scrim').classList.add('on'); $('#sheet').classList.add('on'); }); $('#sheet').setAttribute('aria-hidden', 'false'); renderHoja(); setTimeout(() => $('#sheet').querySelector('input,button.btn')?.focus(), 250); }
-function cerrarHoja(silencio) { HOJA = null; $('#sheet').classList.remove('on'); $('#scrim').classList.remove('on'); $('#sheet').setAttribute('aria-hidden', 'true'); setTimeout(() => { if (!HOJA) $('#scrim').classList.add('hidden'); }, 220); }
+function cerrarHoja(silencio) { HOJA = null; $('#sheet')._clave = null; $('#sheet')._html = null; $('#sheet').classList.remove('on'); $('#scrim').classList.remove('on'); $('#sheet').setAttribute('aria-hidden', 'true'); setTimeout(() => { if (!HOJA) $('#scrim').classList.add('hidden'); }, 220); }
 function renderHoja() {
   const S = DB.S, h = HOJA; if (!h) return;
   const c = S.canchas.find(x => x.id === h.c); if (!c) { cerrarHoja(); return; }
@@ -1040,7 +1042,18 @@ function renderHoja() {
   }
   // el nombre y el teléfono escritos se conservan al cambiar la duración o si llega un cambio de otra pantalla
   const prev = { c: $('#rCliente')?.value, t: $('#rTel')?.value };
-  ponerHTML($('#sheet'), head + `<div class="sheet-b">${body}</div>`);
+  const sh = $('#sheet'), hEl = sh.querySelector(':scope > .sheet-h'), bEl = sh.querySelector(':scope > .sheet-b');
+  if (hEl && bEl && sh._clave === h.fecha + h.c + h.h) {
+    // misma reserva abierta: se actualiza sin reemplazar el contenedor que tiene el scroll
+    const y = bEl.scrollTop;
+    const tmp = document.createElement('div'); tmp.innerHTML = head;
+    if (hEl.innerHTML !== tmp.firstElementChild.innerHTML) hEl.innerHTML = tmp.firstElementChild.innerHTML;
+    ponerHTML(bEl, body);
+    if (bEl.scrollTop !== y) bEl.scrollTop = y;
+  } else {
+    sh._html = null; sh._clave = h.fecha + h.c + h.h;
+    ponerHTML(sh, head + `<div class="sheet-b">${body}</div>`);
+  }
   if (!r && !c.bloqueo) { if (prev.c && $('#rCliente')) $('#rCliente').value = prev.c; if (prev.t && $('#rTel')) $('#rTel').value = prev.t; }
 }
 let METODO = 'efectivo';
@@ -1658,7 +1671,13 @@ const nube = {
   escuchar() {
     if (this.canal) return;
     const t = {};
-    const prog = (k, f) => { clearTimeout(t[k]); t[k] = setTimeout(async () => { try { await f(); renderSeguro(); } catch (e) {} }, 300); };
+    // varios avisos seguidos (reserva, consumos, stock, historial) se juntan en una sola recarga y un solo redibujo
+    const cola = new Map(); let tm = null;
+    const prog = (k, f) => { cola.set(k, f); clearTimeout(tm); tm = setTimeout(async () => {
+      const fs = [...cola.values()]; cola.clear();
+      try { await Promise.all(fs.map(g => g())); } catch (e) {}
+      renderSeguro();
+    }, 400); };
     const ch = sb.channel('club-' + this.C);
     const on = (tabla, f) => ch.on('postgres_changes', { event: '*', schema: 'public', table: tabla, filter: 'club_id=eq.' + this.C }, () => prog(tabla, f));
     on('reservas', () => this.cargarReservas());
@@ -1693,7 +1712,12 @@ const nube = {
 };
 
 // no re-dibujar mientras alguien está escribiendo; se dibuja al salir del campo
+let TOCANDO = false, TOQUE_T = null;
+document.addEventListener('touchstart', () => { TOCANDO = true; clearTimeout(TOQUE_T); }, { passive: true });
+document.addEventListener('touchend', () => { clearTimeout(TOQUE_T); TOQUE_T = setTimeout(() => { TOCANDO = false; if (nube.pendiente && !document.activeElement?.matches('input,select,textarea')) { nube.pendiente = false; renderConservando(); } }, 350); }, { passive: true });
+document.addEventListener('touchcancel', () => { TOCANDO = false; }, { passive: true });
 function renderSeguro() {
+  if (TOCANDO) { nube.pendiente = true; return; }
   if (document.activeElement && document.activeElement.matches('input,select,textarea')) { nube.pendiente = true; return; }
   renderConservando();
 }
