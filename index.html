@@ -310,6 +310,8 @@ a.btn{text-decoration:none}
 .sug button{border:1px solid var(--line,#c9c6bc);background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .sug button small{font-weight:500;opacity:.7;margin-left:6px}
 .solo-cel{display:none}
+.promo-tag{display:inline-block;align-self:flex-start;font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#fff;background:var(--brand);border-radius:3px;padding:2px 6px;margin-top:4px}
+.promo-ok{color:var(--brand);font-weight:800}
 /* dividir la cuenta y cuentas por persona */
 .stepper{display:inline-flex;align-items:center;border:1.5px solid var(--ink);border-radius:var(--r);width:max-content;background:#fff}
 .stepper button{width:46px;height:44px;border:0;background:none;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
@@ -588,13 +590,13 @@ function sembrarDemo(S) {
     ['Agua 500 ml', 'Bebidas', 5000, 2500, 48, 12],
     ['Gatorade', 'Bebidas', 12000, 7000, 20, 8],
     ['Coca-Cola 500 ml', 'Bebidas', 8000, 4500, 30, 10],
-    ['Cerveza lata', 'Bebidas', 12000, 6500, 7, 12],
+    ['Cerveza lata', 'Bebidas', 12000, 6500, 30, 12, 'venta', 3, 30000],
     ['Barrita de cereal', 'Snacks', 6000, 3000, 25, 6],
     ['Papas fritas', 'Snacks', 9000, 5000, 4, 6],
     ['Tubo de pelotas', 'Pádel', 45000, 30000, 9, 4],
     ['Overgrip', 'Pádel', 20000, 11000, 12, 4],
     ['Alquiler de paleta', 'Alquiler', 15000, 0, 6, 0, 'alquiler']
-  ].map(([nombre, cat, precio, costo, stock, minimo, tipo]) => ({ id: uid(), nombre, cat, precio, costo, stock, minimo, tipo: tipo || 'venta' }));
+  ].map(([nombre, cat, precio, costo, stock, minimo, tipo, promoCant, promoPrecio]) => ({ id: uid(), nombre, cat, precio, costo, stock, minimo, tipo: tipo || 'venta', promoCant: promoCant ?? null, promoPrecio: promoPrecio ?? null }));
   // historial de reservas de las últimas 8 semanas (para el mapa de horas), con duraciones de 1 h a 2 h
   const nombres = ['Martínez', 'Gómez', 'Benítez', 'Villalba', 'Duarte', 'Cáceres', 'Ortiz', 'Giménez', 'Rojas', 'Acosta', 'Franco', 'Sosa'];
   S.canchas.forEach(c => c.precio = c.techada ? 120000 : 100000);
@@ -650,19 +652,24 @@ function libreHasta(fk, canchaId, min, excepto) { let fin = limites(DB.S.club).c
 const precioPor = (c, dur) => Math.round((+c.precio || 0) * dur / 60);
 function fmtDur(m) { const h = Math.floor(m / 60), mm = m % 60; return (h ? h + ' h' : '') + (mm ? (h ? ' ' : '') + mm + ' min' : ''); }
 const rango = r => `${toHora(toMin(r.ini))}–${toHora(finDe(r))}`;
-function totalReserva(r) { return (+r.precio || 0) + (r.consumos || []).reduce((a, c) => a + c.precio * c.cant, 0); }
+// importe de una cantidad con promo (ej. 3 por 35.000): packs completos + sueltas a precio unidad
+function montoCant(cant, precio, pc, pp) { cant = +cant || 0; precio = +precio || 0; pc = +pc || 0; return pc >= 2 && pp != null && pp !== '' ? Math.floor(cant / pc) * +pp + (cant % pc) * precio : cant * precio; }
+const montoK = k => montoCant(k.cant, k.precio, k.promoCant, k.promoPrecio);
+const promoTxt = x => x && +x.promoCant >= 2 && x.promoPrecio != null ? `${x.promoCant} × ${miles(x.promoPrecio)}` : '';
+const promoAplicada = k => +k.promoCant >= 2 && k.promoPrecio != null && k.cant >= k.promoCant;
+function totalReserva(r) { return (+r.precio || 0) + (r.consumos || []).reduce((a, c) => a + montoK(c), 0); }
 function pagado(r) { return (r.pagos || []).reduce((a, p) => a + p.monto, 0); }
 // personas que dividen la cuenta de una reserva (vacío = sin dividir)
 const personasDe = r => (r.personas || []).slice().sort((a, b) => a.orden - b.orden);
 // cuánto le toca a cada persona: su parte de la cancha (y de lo pedido "para todos") + lo que pidió ella
 function cuentaPersonas(r) {
   const P = personasDe(r); if (P.length < 2) return null;
-  const comun = (+r.precio || 0) + (r.consumos || []).filter(k => !k.persona).reduce((a, k) => a + k.precio * k.cant, 0);
+  const comun = (+r.precio || 0) + (r.consumos || []).filter(k => !k.persona).reduce((a, k) => a + montoK(k), 0);
   // partes iguales. Si el monto es múltiplo de 50 Gs., cada parte también (la diferencia se reparte de a 50 entre los primeros);
   // si no, se reparte de a 1 Gs. La suma de las partes es siempre exactamente el total.
   const u = comun % 50 === 0 && comun >= P.length * 50 ? 50 : 1, base = Math.floor(comun / P.length / u) * u, extras = Math.round((comun - base * P.length) / u);
   return P.map((p, i) => {
-    const propio = (r.consumos || []).filter(k => k.persona === p.id).reduce((a, k) => a + k.precio * k.cant, 0);
+    const propio = (r.consumos || []).filter(k => k.persona === p.id).reduce((a, k) => a + montoK(k), 0);
     const pago = (r.pagos || []).filter(x => x.persona === p.id).reduce((a, x) => a + x.monto, 0);
     const c = base + (i < extras ? u : 0) + (i === 0 ? comun - base * P.length - extras * u : 0);
     return { ...p, comun: c, propio, pago, saldo: Math.max(0, c + propio - pago) };
@@ -1017,9 +1024,9 @@ function renderHoja() {
         <h3 style="margin-bottom:4px">Cuenta de la cancha</h3>
         <div class="lines">
           <div class="line"><div class="grow">Cancha ${rango(r)}<div class="sub">${fmtDur(durDe(r))}${N > 1 ? ' · se divide entre ' + N : ''}</div></div><b>${gs(r.precio)}</b></div>
-          ${cons.map(k => `<div class="line"><div class="grow">${esc(k.nombre)}${N > 1 ? ` <span class="tag-p">${k.persona ? esc(nomP(k.persona)) : 'Para todos'}</span>` : ''}<div class="sub">${gs(k.precio)} c/u${k.tipo === 'alquiler' ? ' · alquiler, vuelve al stock al cobrar' : ''}</div></div>
+          ${cons.map(k => `<div class="line"><div class="grow">${esc(k.nombre)}${N > 1 ? ` <span class="tag-p">${k.persona ? esc(nomP(k.persona)) : 'Para todos'}</span>` : ''}<div class="sub">${gs(k.precio)} c/u${promoTxt(k) ? ` · promo ${promoTxt(k)}${promoAplicada(k) ? ' <b class="promo-ok">aplicada</b>' : ''}` : ''}${k.tipo === 'alquiler' ? ' · alquiler, vuelve al stock al cobrar' : ''}</div></div>
             ${cerrada ? `<span>×${k.cant}</span>` : `<span class="qty"><button data-act="consumo" data-id="${r.id}" data-p="${k.prodId}" data-per="${k.persona || ''}" data-d="-1" aria-label="Quitar uno"><svg><use href="#i-minus"/></svg></button><span>${k.cant}</span><button data-act="consumo" data-id="${r.id}" data-p="${k.prodId}" data-per="${k.persona || ''}" data-d="1" aria-label="Agregar uno"><svg><use href="#i-plus"/></svg></button></span>`}
-            <b style="min-width:92px;text-align:right">${gs(k.precio * k.cant)}</b></div>`).join('')}
+            <b style="min-width:92px;text-align:right">${gs(montoK(k))}</b></div>`).join('')}
         </div>
       </div>
       ${cerrada ? '' : `<details ${DET_ABIERTO ? 'open' : ''} ontoggle="DET_ABIERTO=this.open"><summary class="btn btn-line btn-sm" style="list-style:none;width:max-content"><svg><use href="#i-plus"/></svg>Agregar de la cantina</summary>
@@ -1156,7 +1163,7 @@ const ACT = {
     DB.commit(S => {
       const r = S.reservas[d.id]; r.consumos = r.consumos || [];
       const k = r.consumos.find(x => x.prodId === p.id && (x.persona || null) === per);
-      if (k) k.cant++; else r.consumos.push({ prodId: p.id, nombre: p.nombre, precio: p.precio, costo: p.costo || 0, cant: 1, tipo: p.tipo, persona: per });
+      if (k) k.cant++; else r.consumos.push({ prodId: p.id, nombre: p.nombre, precio: p.precio, costo: p.costo || 0, cant: 1, tipo: p.tipo, persona: per, promoCant: p.promoCant ?? null, promoPrecio: p.promoPrecio ?? null });
       ajustarStock(S, p.id, -1);
     }, 'Consumo a cancha', `${p.nombre} → ${resTxt(d.id)}`);
   },
@@ -1211,7 +1218,7 @@ function vCantina() {
   const lista = S.productos.filter(p => CAT === 'Todo' || p.cat === CAT);
   const abiertas = reservasAbiertasHoy();
   if (DESTINO !== 'directa' && !abiertas.find(r => r.id === DESTINO)) DESTINO = 'directa';
-  const total = CARRO.reduce((a, k) => a + k.precio * k.cant, 0);
+  const total = CARRO.reduce((a, k) => a + montoK(k), 0);
   return `
   <div class="view-title"><h1>Cantina</h1>${tabs}</div>
   <div class="cantina">
@@ -1220,7 +1227,7 @@ function vCantina() {
       <div class="prods">${lista.map(p => {
         const enCarro = CARRO.find(k => k.prodId === p.id)?.cant || 0, sinStock = p.stock - enCarro <= 0, soloCancha = p.tipo === 'alquiler' && DESTINO === 'directa';
         return `<button class="plate prod" data-act="alCarro" data-p="${p.id}" ${sinStock || soloCancha ? 'disabled' : ''}>
-          <span class="pn">${esc(p.nombre)}</span>
+          <span class="pn">${esc(p.nombre)}</span>${promoTxt(p) ? `<span class="promo-tag">Promo ${promoTxt(p)}</span>` : ''}
           <span class="spread"><span class="pp">${miles(p.precio)}</span><span class="ps ${p.stock <= p.minimo ? 'low' : ''}">${soloCancha ? 'Solo a cancha' : (p.tipo === 'alquiler' ? p.stock + ' disp.' : 'Stock ' + p.stock)}</span></span></button>`;
       }).join('') || `<div class="plate empty"><b>No hay productos</b>${esAdmin() ? 'Cargalos en Inventario.' : ''}</div>`}</div>
     </section>
@@ -1234,7 +1241,7 @@ function vCantina() {
       ${(() => { const rr = DB.S.reservas[DESTINO], PP = rr ? personasDe(rr) : []; if (PP.length < 2) { DESTINO_PER = ''; return ''; }
         if (DESTINO_PER && !PP.find(p => p.id === DESTINO_PER)) DESTINO_PER = '';
         return `<label class="f">¿Para quién?<select class="inp" data-in="destinoPer"><option value="">Para todos (se divide)</option>${PP.map(p => `<option value="${p.id}" ${DESTINO_PER === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}</select></label>`; })()}
-      <div class="lines">${CARRO.map((k, i) => `<div class="line"><div class="grow">${esc(k.nombre)}<div class="sub">${gs(k.precio)} c/u</div></div>
+      <div class="lines">${CARRO.map((k, i) => `<div class="line"><div class="grow">${esc(k.nombre)}<div class="sub">${gs(k.precio)} c/u${promoTxt(k) ? ` · promo ${promoTxt(k)}${promoAplicada(k) ? ' <b class="promo-ok">aplicada</b>' : ''}` : ''} · ${gs(montoK(k))}</div></div>
         <span class="qty"><button data-act="carro" data-i="${i}" data-d="-1" aria-label="Quitar uno"><svg><use href="#i-minus"/></svg></button><span>${k.cant}</span><button data-act="carro" data-i="${i}" data-d="1" aria-label="Agregar uno"><svg><use href="#i-plus"/></svg></button></span></div>`).join('')
         || '<div class="muted" style="padding:10px 0">Tocá los productos para armar el pedido.</div>'}</div>
       <div class="spread"><span class="muted">Total</span><span class="total">${gs(total)}</span></div>
@@ -1265,13 +1272,13 @@ function vInventario() {
 Object.assign(ACT, {
   subc: d => { SUBC = d.s; render(); },
   cat: d => { CAT = d.c; render(); },
-  alCarro: d => { const p = DB.S.productos.find(x => x.id === d.p); const k = CARRO.find(x => x.prodId === p.id); if (k) k.cant++; else CARRO.push({ prodId: p.id, nombre: p.nombre, precio: p.precio, costo: p.costo || 0, cant: 1, tipo: p.tipo }); render(); },
+  alCarro: d => { const p = DB.S.productos.find(x => x.id === d.p); const k = CARRO.find(x => x.prodId === p.id); if (k) k.cant++; else CARRO.push({ prodId: p.id, nombre: p.nombre, precio: p.precio, costo: p.costo || 0, cant: 1, tipo: p.tipo, promoCant: p.promoCant ?? null, promoPrecio: p.promoPrecio ?? null }); render(); },
   carro: d => { const k = CARRO[+d.i], p = DB.S.productos.find(x => x.id === k.prodId); if (+d.d > 0 && p && k.cant >= p.stock) { toast('No hay más stock'); return; } k.cant += +d.d; if (k.cant <= 0) CARRO.splice(+d.i, 1); render(); },
   vaciar: () => { CARRO = []; render(); },
   metodoC: d => { METODO = d.m; render(); },
   venderYa: () => {
     if (!CARRO.length || !DB.S.caja.actual) return;
-    const total = CARRO.reduce((a, k) => a + k.precio * k.cant, 0), items = CARRO.map(k => ({ ...k }));
+    const total = CARRO.reduce((a, k) => a + montoK(k), 0), items = CARRO.map(k => ({ ...k, monto: montoK(k) }));
     DB.commit(S => {
       for (const k of items) ajustarStock(S, k.prodId, -k.cant);
       S.caja.actual.movs.push({ ts: Date.now(), tipo: 'cantina', monto: total, metodo: METODO, ref: items.map(k => `${k.cant}× ${k.nombre}`).join(', '), op: OP.nombre, items });
@@ -1313,6 +1320,10 @@ function editarProducto(id) {
       <label class="f" style="flex:1">Costo<input class="inp" id="pCos" inputmode="numeric" value="${miles(p.costo)}" oninput="formatoMiles(this)"></label></div>
     <div class="row"><label class="f" style="flex:1">Stock actual<input class="inp" id="pSto" type="number" min="0" value="${p.stock}"></label>
       <label class="f" style="flex:1">Avisar cuando quede<input class="inp" id="pMin" type="number" min="0" value="${p.minimo}"></label></div>
+    <div class="f"><span>Promo por cantidad (opcional)</span>
+      <div class="row"><label class="f" style="flex:1">Llevando<input class="inp" id="pPromoC" type="number" min="2" max="100" placeholder="Ej.: 3" value="${p.promoCant ?? ''}"></label>
+        <label class="f" style="flex:1.4">Pagan en total<input class="inp" id="pPromoP" inputmode="numeric" placeholder="Ej.: 35.000" value="${p.promoPrecio != null ? miles(p.promoPrecio) : ''}" oninput="formatoMiles(this)"></label></div>
+      <span class="muted" style="font-size:13px;font-weight:500">Ej.: 3 por 35.000. Se aplica sola al cobrar: 4 unidades = 1 promo + 1 a precio normal. Dejalo vacío si no tiene promo.</span></div>
     <button class="btn btn-ink" data-act="guardarProd" data-id="${id || ''}">Guardar</button>
     ${id ? `<button class="btn btn-danger btn-sm" data-act="borrarProd" data-id="${id}">Quitar producto</button>` : ''}
   </div>`;
@@ -1322,6 +1333,10 @@ Object.assign(ACT, {
   guardarProd: d => {
     const nombre = $('#pNom').value.trim(); if (!nombre) { toast('Poné el nombre'); return; }
     const datos = { nombre, cat: $('#pCat').value.trim() || 'Otros', tipo: $('#pTipo').value, precio: num($('#pPre').value), costo: num($('#pCos').value), stock: Math.max(0, +$('#pSto').value || 0), minimo: Math.max(0, +$('#pMin').value || 0) };
+    const pc = +$('#pPromoC').value || 0, ppTxt = $('#pPromoP').value.trim(), pp = num(ppTxt);
+    if (pc && (pc < 2 || pc > 100 || !ppTxt)) { toast('Para la promo poné cuántas unidades (2 o más) y cuánto pagan en total'); return; }
+    if (!pc && ppTxt) { toast('Poné también cuántas unidades lleva la promo'); return; }
+    datos.promoCant = pc || null; datos.promoPrecio = pc ? pp : null;
     DB.commit(S => { if (d.id) Object.assign(S.productos.find(x => x.id === d.id), datos); else S.productos.push({ id: uid(), ...datos }); }, d.id ? 'Producto editado' : 'Producto nuevo', `${nombre} · ${gs(datos.precio)}`);
     cerrarHoja(); toast('Guardado');
   },
@@ -1385,7 +1400,7 @@ function vResumen() {
   const ingCanchas = res.reduce((a, r) => a + (r.estado === 'cobrada' ? +r.precio : 0), 0);
   const tsDesde = keyToDate(desde).getTime();
   const ventas = {};
-  const sumar = (k, fueraDeCaja) => { const v = ventas[k.nombre] = ventas[k.nombre] || { cant: 0, ing: 0, gan: 0, tipo: k.tipo }; v.cant += k.cant; v.ing += k.precio * k.cant; v.gan += (k.precio - (k.costo || 0)) * k.cant; };
+  const sumar = (k, fueraDeCaja) => { const v = ventas[k.nombre] = ventas[k.nombre] || { cant: 0, ing: 0, gan: 0, tipo: k.tipo }; const m = k.monto != null ? +k.monto : montoK(k); v.cant += k.cant; v.ing += m; v.gan += m - (k.costo || 0) * k.cant; };
   for (const cj of [...S.caja.cerradas, ...(S.caja.actual ? [S.caja.actual] : [])]) for (const m of cj.movs) if (m.ts >= tsDesde && m.tipo === 'cantina') for (const k of m.items || []) sumar(k);
   for (const r of res) if (r.estado === 'cobrada') for (const k of r.consumos || []) sumar(k);
   const tabla = Object.entries(ventas).sort((a, b) => b[1].cant - a[1].cant);
@@ -1543,7 +1558,7 @@ let sb = null;
 const ERRORES = {
   CAJA_CERRADA: 'Abrí la caja para poder cobrar', SIN_STOCK: 'No hay stock suficiente', RESERVA_CERRADA: 'Esa reserva ya está cerrada',
   MONTO_INVALIDO: 'El monto no es válido', TIENE_PAGOS: 'Tiene pagos registrados: no se puede cancelar', ALQUILER_SOLO_CANCHA: 'El alquiler se carga a la cuenta de una cancha',
-  PEDIDO_VACIO: 'El pedido está vacío', HORARIO_OCUPADO: 'El horario siguiente ya está ocupado', FUERA_DE_HORARIO: 'Se pasa del horario de cierre del club', DEMASIADOS_INTENTOS: 'Demasiados intentos. Esperá una hora e intentá de nuevo.', PRODUCTO_NO_EXISTE: 'Ese producto ya no existe', CANCHA_CON_RESERVAS: 'Esa cancha tiene reservas pendientes. Cancelalas o movelas antes de borrarla.', CANTIDAD_INVALIDA: 'La cantidad tiene que ser 1 o más', METODO_INVALIDO: 'Elegí la forma de pago', CANCHA_NO_EXISTE: 'Esa cancha ya no existe', YA_PAGADO: 'No se puede quitar: esa parte ya está cobrada', PIN_ADMIN: 'PIN de administrador incorrecto', SIN_ADMIN: 'Tiene que quedar al menos un administrador activo', YA_HAY_ADMIN: 'El club ya tiene administrador', NO_AUTORIZADO: 'Este dispositivo no tiene permiso', FALTA_NOMBRE: 'Poné el nombre', SESION_VENCIDA: 'Tu sesión venció: entrá de nuevo con tu PIN', PERSONA_CON_CONSUMOS: 'Esa persona ya tiene consumos o pagos: quitáselos antes de sacarla', PERSONA_NO_EXISTE: 'Esa persona ya no está en la cuenta', NO_BORRAR_A_UNO_MISMO: 'No podés borrarte a vos mismo', FECHA_INVALIDA: 'La fecha no es válida', FIJO_MUY_LARGO: 'Un turno fijo puede durar hasta 6 meses; después se extiende', FIJO_SIN_LUGAR: 'Todas esas fechas ya están ocupadas', SOLO_ADMIN: 'Eso lo puede hacer solo administración', CANCHA_BLOQUEADA: 'Esa cancha está bloqueada', PIN_INVALIDO: 'El PIN tiene que ser de 4 números', TIPO_INVALIDO: 'Tipo de producto no válido', ROL_INVALIDO: 'Rol no válido'
+  PEDIDO_VACIO: 'El pedido está vacío', HORARIO_OCUPADO: 'El horario siguiente ya está ocupado', FUERA_DE_HORARIO: 'Se pasa del horario de cierre del club', DEMASIADOS_INTENTOS: 'Demasiados intentos. Esperá una hora e intentá de nuevo.', PRODUCTO_NO_EXISTE: 'Ese producto ya no existe', CANCHA_CON_RESERVAS: 'Esa cancha tiene reservas pendientes. Cancelalas o movelas antes de borrarla.', CANTIDAD_INVALIDA: 'La cantidad tiene que ser 1 o más', METODO_INVALIDO: 'Elegí la forma de pago', CANCHA_NO_EXISTE: 'Esa cancha ya no existe', YA_PAGADO: 'No se puede quitar: esa parte ya está cobrada', PIN_ADMIN: 'PIN de administrador incorrecto', SIN_ADMIN: 'Tiene que quedar al menos un administrador activo', YA_HAY_ADMIN: 'El club ya tiene administrador', NO_AUTORIZADO: 'Este dispositivo no tiene permiso', FALTA_NOMBRE: 'Poné el nombre', SESION_VENCIDA: 'Tu sesión venció: entrá de nuevo con tu PIN', PROMO_INVALIDA: 'La promo tiene que ser de 2 o más unidades y tener un precio', PERSONA_CON_CONSUMOS: 'Esa persona ya tiene consumos o pagos: quitáselos antes de sacarla', PERSONA_NO_EXISTE: 'Esa persona ya no está en la cuenta', NO_BORRAR_A_UNO_MISMO: 'No podés borrarte a vos mismo', FECHA_INVALIDA: 'La fecha no es válida', FIJO_MUY_LARGO: 'Un turno fijo puede durar hasta 6 meses; después se extiende', FIJO_SIN_LUGAR: 'Todas esas fechas ya están ocupadas', SOLO_ADMIN: 'Eso lo puede hacer solo administración', CANCHA_BLOQUEADA: 'Esa cancha está bloqueada', PIN_INVALIDO: 'El PIN tiene que ser de 4 números', TIPO_INVALIDO: 'Tipo de producto no válido', ROL_INVALIDO: 'Rol no válido'
 };
 function msgError(e) {
   const m = String((e && (e.message || e.details)) || e || '');
@@ -1614,7 +1629,7 @@ const nube = {
   },
   async cargarProductos() {
     const r = await q(sb.from('productos').select('*').eq('club_id', this.C).eq('activo', true).order('cat').order('nombre'));
-    this.S.productos = r.map(p => ({ id: p.id, nombre: p.nombre, cat: p.cat, precio: p.precio, costo: p.costo, stock: p.stock, minimo: p.minimo, tipo: p.tipo }));
+    this.S.productos = r.map(p => ({ id: p.id, nombre: p.nombre, cat: p.cat, precio: p.precio, costo: p.costo, stock: p.stock, minimo: p.minimo, tipo: p.tipo, promoCant: p.promo_cant ?? null, promoPrecio: p.promo_precio ?? null }));
   },
   async cargarOperadores() {
     const r = await q(sb.from('operadores').select('id,nombre,rol,activo').eq('club_id', this.C).order('nombre'));
@@ -1623,7 +1638,7 @@ const nube = {
   mapReserva(r) {
     return { id: r.id, fecha: r.fecha, canchaId: r.cancha_id, ini: r.ini, dur: r.dur || 60, cliente: r.cliente, tel: r.tel, jugadores: r.jugadores, precio: r.precio,
       estado: r.estado, motivo: r.motivo, creado: ms(r.creado),
-      consumos: (r.consumos || []).slice().sort((a, b) => a.nombre.localeCompare(b.nombre) || String(a.id).localeCompare(String(b.id))).map(c => ({ prodId: c.producto_id, nombre: c.nombre, precio: c.precio, costo: c.costo, cant: c.cant, tipo: c.tipo, persona: c.persona_id || null })),
+      consumos: (r.consumos || []).slice().sort((a, b) => a.nombre.localeCompare(b.nombre) || String(a.id).localeCompare(String(b.id))).map(c => ({ prodId: c.producto_id, nombre: c.nombre, precio: c.precio, costo: c.costo, cant: c.cant, tipo: c.tipo, persona: c.persona_id || null, promoCant: c.promo_cant ?? null, promoPrecio: c.promo_precio ?? null })),
       personas: (r.personas || []).map(p => ({ id: p.id, nombre: p.nombre, orden: p.orden })), fijoId: r.fijo_id || null,
       pagos: (r.pagos || []).sort((a, b) => ms(a.ts) - ms(b.ts)).map(p => ({ ts: ms(p.ts), monto: p.monto, metodo: p.metodo, op: p.operador, parte: p.parte, persona: p.persona_id || null })) };
   },
@@ -1843,9 +1858,13 @@ const ACT_NUBE = {
   guardarProd: d => {
     const nombre = $('#pNom').value.trim(); if (!nombre) { toast('Poné el nombre'); return; }
     const datos = { nombre, cat: $('#pCat').value.trim() || 'Otros', tipo: $('#pTipo').value, precio: num($('#pPre').value), costo: num($('#pCos').value), stock: Math.max(0, +$('#pSto').value || 0), minimo: Math.max(0, +$('#pMin').value || 0) };
+    const pc = +$('#pPromoC').value || 0, ppTxt = $('#pPromoP').value.trim(), pp = num(ppTxt);
+    if (pc && (pc < 2 || pc > 100 || !ppTxt)) { toast('Para la promo poné cuántas unidades (2 o más) y cuánto pagan en total'); return; }
+    if (!pc && ppTxt) { toast('Poné también cuántas unidades lleva la promo'); return; }
+    datos.promoCant = pc || null; datos.promoPrecio = pc ? pp : null;
     cerrarHoja();
     nube.hacer(() => q(sb.rpc('producto_guardar', { p_club: nube.C, p_token: OP_TOK, p_id: d.id || null, p_nombre: datos.nombre, p_cat: datos.cat, p_tipo: datos.tipo,
-      p_precio: datos.precio, p_costo: datos.costo, p_stock: datos.stock, p_minimo: datos.minimo })), ['Productos'], 'Guardado');
+      p_precio: datos.precio, p_costo: datos.costo, p_stock: datos.stock, p_minimo: datos.minimo, p_promo_cant: datos.promoCant, p_promo_precio: datos.promoPrecio })), ['Productos'], 'Guardado');
   },
   borrarProd: async d => {
     const p = DB.S.productos.find(x => x.id === d.id); if (!(await confirmar(`¿Quitar “${p.nombre}” de la cantina?`, 'Quitar'))) return;
